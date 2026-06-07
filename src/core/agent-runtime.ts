@@ -1157,7 +1157,9 @@ async function resolveCheckCommand(projectPath: string): Promise<string | null> 
 
   try {
     await fs.access(`${projectPath}/check.ps1`);
-    return 'powershell -ExecutionPolicy Bypass -File ./check.ps1';
+    return process.platform === 'win32'
+      ? 'powershell -ExecutionPolicy Bypass -File ./check.ps1'
+      : 'pwsh -ExecutionPolicy Bypass -File ./check.ps1';
   } catch {}
 
   return null;
