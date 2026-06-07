@@ -1,8 +1,8 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import { createRequire } from 'node:module';
-import yaml from 'js-yaml';
+import path from 'node:path';
 import { unzipSync } from 'fflate';
+import yaml from 'js-yaml';
 import type { Node } from 'web-tree-sitter';
 
 const _require = createRequire(import.meta.url);
@@ -366,18 +366,23 @@ function summarizeStructuredFile(
 
   if (extension === '.json') return summarizeJsonFile(relativePath, source);
   if (extension === '.yml' || extension === '.yaml') {
-    return summarizeGithubActionsFile(relativePath, source) ?? summarizeYamlFile(relativePath, source);
+    return (
+      summarizeGithubActionsFile(relativePath, source) ?? summarizeYamlFile(relativePath, source)
+    );
   }
-  if (extension === '.md' || extension === '.mdx') return summarizeMarkdownFile(relativePath, source);
+  if (extension === '.md' || extension === '.mdx')
+    return summarizeMarkdownFile(relativePath, source);
   if (extension === '.sql') return summarizeSqlFile(relativePath, source);
   if (extension === '.html' || extension === '.htm') return summarizeHtmlFile(relativePath, source);
 
   // -- New language coverage --
 
   if (extension === '.toml') return summarizeTomlFile(relativePath, source);
-  if (extension === '.graphql' || extension === '.gql') return summarizeGraphqlFile(relativePath, source);
+  if (extension === '.graphql' || extension === '.gql')
+    return summarizeGraphqlFile(relativePath, source);
   if (extension === '.proto') return summarizeProtoFile(relativePath, source);
-  if (extension === '.tf' || extension === '.hcl' || extension === '.tfvars') return summarizeTerraformFile(relativePath, source);
+  if (extension === '.tf' || extension === '.hcl' || extension === '.tfvars')
+    return summarizeTerraformFile(relativePath, source);
   if (extension === '.prisma') return summarizePrismaFile(relativePath, source);
   if (extension === '.sol') return summarizeSolidityFile(relativePath, source);
   if (extension === '.zig') return summarizeZigFile(relativePath, source);
@@ -385,13 +390,17 @@ function summarizeStructuredFile(
   if (extension === '.kt' || extension === '.kts') return summarizeKotlinFile(relativePath, source);
   if (extension === '.swift') return summarizeSwiftFile(relativePath, source);
   if (extension === '.lua') return summarizeLuaFile(relativePath, source);
-  if (extension === '.scala' || extension === '.sc') return summarizeScalaFile(relativePath, source);
+  if (extension === '.scala' || extension === '.sc')
+    return summarizeScalaFile(relativePath, source);
   if (extension === '.ex' || extension === '.exs') return summarizeElixirFile(relativePath, source);
-  if (extension === '.erl' || extension === '.hrl') return summarizeErlangFile(relativePath, source);
-  if (extension === '.hs' || extension === '.lhs') return summarizeHaskellFile(relativePath, source);
+  if (extension === '.erl' || extension === '.hrl')
+    return summarizeErlangFile(relativePath, source);
+  if (extension === '.hs' || extension === '.lhs')
+    return summarizeHaskellFile(relativePath, source);
   if (extension === '.pl' || extension === '.pm') return summarizePerlFile(relativePath, source);
   if (extension === '.r') return summarizeRFile(relativePath, source);
-  if (extension === '.clj' || extension === '.cljs' || extension === '.cljc') return summarizeClojureFile(relativePath, source);
+  if (extension === '.clj' || extension === '.cljs' || extension === '.cljc')
+    return summarizeClojureFile(relativePath, source);
   if (extension === '.vue') return summarizeVueFile(relativePath, source);
   if (extension === '.svelte') return summarizeSvelteFile(relativePath, source);
   if (extension === '.astro') return summarizeAstroFile(relativePath, source);
@@ -402,7 +411,8 @@ function summarizeStructuredFile(
   if (extension === '.nix') return summarizeNixFile(relativePath, source);
   if (extension === '.ipynb') return summarizeJupyterFile(relativePath, source);
   if (extension === '.wat' || extension === '.wast') return summarizeWatFile(relativePath, source);
-  if (extension === '.asm' || extension === '.nasm' || extension === '.nas') return summarizeAssemblyFile(relativePath, source);
+  if (extension === '.asm' || extension === '.nasm' || extension === '.nas')
+    return summarizeAssemblyFile(relativePath, source);
   // .s / .S (GAS syntax) - only if clearly assembly (not Scala .sc or Swift)
   if (extension === '.s' || extension === '.S') return summarizeAssemblyFile(relativePath, source);
 
@@ -411,7 +421,8 @@ function summarizeStructuredFile(
     basename === 'Dockerfile' ||
     basename.startsWith('Dockerfile.') ||
     extension === '.dockerfile'
-  ) return summarizeDockerfile(relativePath, source);
+  )
+    return summarizeDockerfile(relativePath, source);
 
   if (
     basename === 'Makefile' ||
@@ -419,9 +430,11 @@ function summarizeStructuredFile(
     basename === 'makefile' ||
     extension === '.mk' ||
     extension === '.makefile'
-  ) return summarizeMakefile(relativePath, source);
+  )
+    return summarizeMakefile(relativePath, source);
 
-  if (basename === 'CMakeLists.txt' || extension === '.cmake') return summarizeCMakeFile(relativePath, source);
+  if (basename === 'CMakeLists.txt' || extension === '.cmake')
+    return summarizeCMakeFile(relativePath, source);
 
   // .env and .env.* (path.extname('.env') = '', so check basename)
   if (basename === '.env' || basename.match(/^\.env\.\w/) !== null) {
@@ -575,7 +588,10 @@ function summarizeSqlFile(relativePath: string, source: string): Omit<RepoMapFil
   };
 }
 
-function summarizeHtmlFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeHtmlFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
 
@@ -661,7 +677,13 @@ function makePartialFile(
   symbols: RepoSymbol[],
 ): Omit<RepoMapFile, 'lines'> | null {
   if (symbols.length === 0 && imports.length === 0) return null;
-  return { path: relativePath, language, parser: 'fallback', imports, symbols: dedupeSymbols(symbols).slice(0, 36) };
+  return {
+    path: relativePath,
+    language,
+    parser: 'fallback',
+    imports,
+    symbols: dedupeSymbols(symbols).slice(0, 36),
+  };
 }
 
 function symbolsFromLines(
@@ -688,14 +710,22 @@ function symbolsFromLines(
 }
 
 // TOML — sections [section] and top-level key = value
-function summarizeTomlFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeTomlFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   for (const [i, line] of lines.entries()) {
     const trimmed = line.trim();
     const section = /^\[([^\[\]#]+)\]/.exec(trimmed);
     if (section?.[1]) {
-      symbols.push({ name: section[1].trim(), kind: 'section', line: i + 1, signature: trimmed.slice(0, 120) });
+      symbols.push({
+        name: section[1].trim(),
+        kind: 'section',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
       continue;
     }
     const kv = /^([A-Za-z_][\w.-]*)\s*=/.exec(trimmed);
@@ -707,7 +737,10 @@ function summarizeTomlFile(relativePath: string, source: string): Omit<RepoMapFi
 }
 
 // Dockerfile — FROM stages, EXPOSE, CMD, ENTRYPOINT, ARG, ENV labels
-function summarizeDockerfile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeDockerfile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^FROM\s+\S+(?:\s+AS\s+(\S+))?/i, kind: 'stage', nameGroup: 1 },
@@ -723,18 +756,29 @@ function summarizeDockerfile(relativePath: string, source: string): Omit<RepoMap
 }
 
 // Makefile — targets (lines with `target:` not preceded by whitespace)
-function summarizeMakefile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeMakefile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   const imports: string[] = [];
   for (const [i, line] of lines.entries()) {
     if (line.startsWith('\t') || line.startsWith(' ') || line.startsWith('#')) continue;
     const include = /^include\s+(.+)/.exec(line);
-    if (include?.[1]) { imports.push(include[1].trim()); continue; }
+    if (include?.[1]) {
+      imports.push(include[1].trim());
+      continue;
+    }
     // Variables at top level
     const varMatch = /^([A-Za-z_][\w.-]*)\s*[:?!]?=/.exec(line);
     if (varMatch?.[1] && varMatch[1].toUpperCase() === varMatch[1]) {
-      symbols.push({ name: varMatch[1], kind: 'variable', line: i + 1, signature: line.slice(0, 120) });
+      symbols.push({
+        name: varMatch[1],
+        kind: 'variable',
+        line: i + 1,
+        signature: line.slice(0, 120),
+      });
       continue;
     }
     // Targets: name: [deps...]
@@ -747,7 +791,10 @@ function summarizeMakefile(relativePath: string, source: string): Omit<RepoMapFi
 }
 
 // CMake — add_library, add_executable, function(), macro()
-function summarizeCMakeFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeCMakeFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^add_executable\s*\(\s*(\S+)/i, kind: 'executable' },
@@ -762,7 +809,10 @@ function summarizeCMakeFile(relativePath: string, source: string): Omit<RepoMapF
 }
 
 // GraphQL — type, query, mutation, subscription, fragment, interface, enum, input, union
-function summarizeGraphqlFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeGraphqlFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^type\s+(\w+)/, kind: 'type' },
@@ -781,7 +831,10 @@ function summarizeGraphqlFile(relativePath: string, source: string): Omit<RepoMa
 }
 
 // Protocol Buffers — message, service, enum, rpc
-function summarizeProtoFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeProtoFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -799,15 +852,19 @@ function summarizeProtoFile(relativePath: string, source: string): Omit<RepoMapF
 }
 
 // Terraform / HCL — resource, module, variable, output, data, provider, locals
-function summarizeTerraformFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeTerraformFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   for (const [i, line] of lines.entries()) {
     if (symbols.length >= 36) break;
     const trimmed = line.trim();
     const m =
-      /^(resource|data|module|variable|output|provider|locals)\s+"([^"]+)"\s+"([^"]*)"/.exec(trimmed) ??
-      /^(resource|data|module|variable|output|provider|locals)\s+"([^"]+)"/.exec(trimmed);
+      /^(resource|data|module|variable|output|provider|locals)\s+"([^"]+)"\s+"([^"]*)"/.exec(
+        trimmed,
+      ) ?? /^(resource|data|module|variable|output|provider|locals)\s+"([^"]+)"/.exec(trimmed);
     if (m) {
       const kind = m[1] ?? '';
       const name = m[3] ? `${m[2]}.${m[3]}` : (m[2] ?? '');
@@ -818,7 +875,10 @@ function summarizeTerraformFile(relativePath: string, source: string): Omit<Repo
 }
 
 // Prisma — model, enum, type
-function summarizePrismaFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizePrismaFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^model\s+(\w+)/, kind: 'model' },
@@ -831,7 +891,10 @@ function summarizePrismaFile(relativePath: string, source: string): Omit<RepoMap
 }
 
 // Solidity — contract, interface, library, function, event, struct, enum, modifier
-function summarizeSolidityFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeSolidityFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -868,7 +931,10 @@ function summarizeZigFile(relativePath: string, source: string): Omit<RepoMapFil
 }
 
 // Dart — class, abstract class, mixin, extension, enum, void/Future/Widget functions
-function summarizeDartFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeDartFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -876,7 +942,10 @@ function summarizeDartFile(relativePath: string, source: string): Omit<RepoMapFi
     { re: /^mixin\s+(\w+)/, kind: 'mixin' },
     { re: /^extension\s+(\w+)/, kind: 'extension' },
     { re: /^enum\s+(\w+)/, kind: 'enum' },
-    { re: /^(?:static\s+)?(?:void|Future|Widget|String|int|bool|double|dynamic)\s+(\w+)\s*\(/, kind: 'function' },
+    {
+      re: /^(?:static\s+)?(?:void|Future|Widget|String|int|bool|double|dynamic)\s+(\w+)\s*\(/,
+      kind: 'function',
+    },
   ]);
   for (const line of lines) {
     const m = /^import\s+'([^']+)'/.exec(line.trim());
@@ -886,7 +955,10 @@ function summarizeDartFile(relativePath: string, source: string): Omit<RepoMapFi
 }
 
 // Kotlin — class, object, fun, interface, data class, sealed class, typealias
-function summarizeKotlinFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeKotlinFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -907,7 +979,10 @@ function summarizeKotlinFile(relativePath: string, source: string): Omit<RepoMap
 }
 
 // Swift — class, struct, protocol, enum, extension, func, typealias, actor
-function summarizeSwiftFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeSwiftFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -916,7 +991,10 @@ function summarizeSwiftFile(relativePath: string, source: string): Omit<RepoMapF
     { re: /^(?:public\s+|private\s+|internal\s+)*protocol\s+(\w+)/, kind: 'protocol' },
     { re: /^(?:public\s+|private\s+|internal\s+)*enum\s+(\w+)/, kind: 'enum' },
     { re: /^(?:public\s+|private\s+|internal\s+)*extension\s+(\w+)/, kind: 'extension' },
-    { re: /^(?:public\s+|private\s+|internal\s+|static\s+|class\s+)*func\s+(\w+)/, kind: 'function' },
+    {
+      re: /^(?:public\s+|private\s+|internal\s+|static\s+|class\s+)*func\s+(\w+)/,
+      kind: 'function',
+    },
     { re: /^typealias\s+(\w+)/, kind: 'typealias' },
     { re: /^actor\s+(\w+)/, kind: 'actor' },
   ]);
@@ -939,7 +1017,10 @@ function summarizeLuaFile(relativePath: string, source: string): Omit<RepoMapFil
 }
 
 // Scala — class, object, trait, case class, def, type
-function summarizeScalaFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeScalaFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -960,7 +1041,10 @@ function summarizeScalaFile(relativePath: string, source: string): Omit<RepoMapF
 }
 
 // Elixir — defmodule, def, defp, defmacro, defstruct, defprotocol
-function summarizeElixirFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeElixirFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^defmodule\s+([\w.]+)/, kind: 'module' },
@@ -975,7 +1059,10 @@ function summarizeElixirFile(relativePath: string, source: string): Omit<RepoMap
 }
 
 // Erlang — -module, -export, function/arity heads
-function summarizeErlangFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeErlangFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   const imports: string[] = [];
@@ -983,19 +1070,38 @@ function summarizeErlangFile(relativePath: string, source: string): Omit<RepoMap
     if (symbols.length >= 36) break;
     const trimmed = line.trim();
     const modM = /^-module\s*\(\s*(\w+)\s*\)/.exec(trimmed);
-    if (modM?.[1]) { symbols.push({ name: modM[1], kind: 'module', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (modM?.[1]) {
+      symbols.push({
+        name: modM[1],
+        kind: 'module',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
     const expM = /^-export\s*\(\s*\[(.+)\]\s*\)/.exec(trimmed);
-    if (expM?.[1]) { imports.push(expM[1].slice(0, 80)); continue; }
+    if (expM?.[1]) {
+      imports.push(expM[1].slice(0, 80));
+      continue;
+    }
     const fnM = /^(\w+)\s*\(/.exec(trimmed);
     if (fnM?.[1] && !trimmed.startsWith('-')) {
-      symbols.push({ name: fnM[1], kind: 'function', line: i + 1, signature: trimmed.slice(0, 120) });
+      symbols.push({
+        name: fnM[1],
+        kind: 'function',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
     }
   }
   return makePartialFile(relativePath, 'erlang', imports.slice(0, 4), symbols);
 }
 
 // Haskell — module, data, type, newtype, class, instance
-function summarizeHaskellFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeHaskellFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -1015,7 +1121,10 @@ function summarizeHaskellFile(relativePath: string, source: string): Omit<RepoMa
 }
 
 // Perl — package, sub, use
-function summarizePerlFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizePerlFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols = symbolsFromLines(lines, [
@@ -1049,7 +1158,10 @@ function summarizeRFile(relativePath: string, source: string): Omit<RepoMapFile,
 }
 
 // Clojure — ns, def, defn, defmacro, defprotocol, defrecord
-function summarizeClojureFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeClojureFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^\(ns\s+([\w.-]+)/, kind: 'namespace' },
@@ -1067,12 +1179,20 @@ function summarizeClojureFile(relativePath: string, source: string): Omit<RepoMa
 function summarizeVueFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const basename = path.basename(relativePath, '.vue');
-  const symbols: RepoSymbol[] = [{ name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` }];
+  const symbols: RepoSymbol[] = [
+    { name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` },
+  ];
   let inScript = false;
   for (const [i, line] of lines.entries()) {
     const trimmed = line.trim();
-    if (/^<script/.test(trimmed)) { inScript = true; continue; }
-    if (/^<\/script>/.test(trimmed)) { inScript = false; continue; }
+    if (/^<script/.test(trimmed)) {
+      inScript = true;
+      continue;
+    }
+    if (/^<\/script>/.test(trimmed)) {
+      inScript = false;
+      continue;
+    }
     if (!inScript) continue;
     const m =
       /^(?:export\s+)?(?:const\s+)?(\w+)\s*(?:=\s*defineComponent|:\s*Component)/.exec(trimmed) ??
@@ -1086,15 +1206,26 @@ function summarizeVueFile(relativePath: string, source: string): Omit<RepoMapFil
 }
 
 // Svelte — single-file component: script exports + component name
-function summarizeSvelteFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeSvelteFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const basename = path.basename(relativePath, '.svelte');
-  const symbols: RepoSymbol[] = [{ name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` }];
+  const symbols: RepoSymbol[] = [
+    { name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` },
+  ];
   let inScript = false;
   for (const [i, line] of lines.entries()) {
     const trimmed = line.trim();
-    if (/^<script/.test(trimmed)) { inScript = true; continue; }
-    if (/^<\/script>/.test(trimmed)) { inScript = false; continue; }
+    if (/^<script/.test(trimmed)) {
+      inScript = true;
+      continue;
+    }
+    if (/^<\/script>/.test(trimmed)) {
+      inScript = false;
+      continue;
+    }
     if (!inScript) continue;
     const m =
       /^export\s+let\s+(\w+)/.exec(trimmed) ??
@@ -1108,19 +1239,36 @@ function summarizeSvelteFile(relativePath: string, source: string): Omit<RepoMap
 }
 
 // Astro — single-file component: frontmatter + component name
-function summarizeAstroFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeAstroFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const basename = path.basename(relativePath, '.astro');
-  const symbols: RepoSymbol[] = [{ name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` }];
+  const symbols: RepoSymbol[] = [
+    { name: basename, kind: 'component', line: 1, signature: `<component>${basename}</component>` },
+  ];
   let inFrontmatter = false;
   let frontmatterEnd = false;
   for (const [i, line] of lines.entries()) {
     const trimmed = line.trim();
-    if (i === 0 && trimmed === '---') { inFrontmatter = true; continue; }
-    if (inFrontmatter && trimmed === '---') { frontmatterEnd = true; continue; }
+    if (i === 0 && trimmed === '---') {
+      inFrontmatter = true;
+      continue;
+    }
+    if (inFrontmatter && trimmed === '---') {
+      frontmatterEnd = true;
+      continue;
+    }
     if (inFrontmatter && !frontmatterEnd) {
       const m = /^(?:import|const|let|function)\s+(\w+)/.exec(trimmed);
-      if (m?.[1]) symbols.push({ name: m[1], kind: 'frontmatter', line: i + 1, signature: trimmed.slice(0, 120) });
+      if (m?.[1])
+        symbols.push({
+          name: m[1],
+          kind: 'frontmatter',
+          line: i + 1,
+          signature: trimmed.slice(0, 120),
+        });
     }
   }
   return makePartialFile(relativePath, 'astro', [], symbols);
@@ -1136,33 +1284,51 @@ function summarizeXmlFile(relativePath: string, source: string): Omit<RepoMapFil
     // Named elements with id
     const idMatch = /id=["']([^"']+)["']/.exec(line);
     if (idMatch?.[1]) {
-      symbols.push({ name: idMatch[1], kind: 'id', line: i + 1, signature: line.trim().slice(0, 120) });
+      symbols.push({
+        name: idMatch[1],
+        kind: 'id',
+        line: i + 1,
+        signature: line.trim().slice(0, 120),
+      });
     }
     // First occurrence of each tag name
     const tagMatch = /<([A-Za-z][\w:.-]+)[\s/>]/.exec(line);
     const tag = tagMatch?.[1];
     if (tag && !seenTags.has(tag)) {
       seenTags.add(tag);
-      symbols.push({ name: tag, kind: 'element', line: i + 1, signature: line.trim().slice(0, 120) });
+      symbols.push({
+        name: tag,
+        kind: 'element',
+        line: i + 1,
+        signature: line.trim().slice(0, 120),
+      });
     }
     // key/name attributes for config XML
     const keyMatch = /\b(?:name|key)\s*=\s*["']([^"']+)["']/.exec(line);
     if (keyMatch?.[1] && keyMatch[1] !== idMatch?.[1]) {
-      symbols.push({ name: keyMatch[1], kind: 'attr', line: i + 1, signature: line.trim().slice(0, 120) });
+      symbols.push({
+        name: keyMatch[1],
+        kind: 'attr',
+        line: i + 1,
+        signature: line.trim().slice(0, 120),
+      });
     }
   }
   return makePartialFile(relativePath, 'xml', [], symbols);
 }
 
 // Gradle (.gradle, .gradle.kts) — plugins, tasks, dependencies section headers
-function summarizeGradleFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeGradleFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols = symbolsFromLines(lines, [
     { re: /^\s*id\s*[('"]([^'"]+)['"]\)?/, kind: 'plugin' },
     { re: /^\s*task\s+(\w+)/, kind: 'task' },
     { re: /^(?:def|val)\s+(\w+)/, kind: 'variable' },
-    { re: /^\s*implementation\s*[('"]([^'"]+)['")]/,  kind: 'dependency' },
-    { re: /^\s*api\s*[('"]([^'"]+)['")]/,  kind: 'dependency' },
+    { re: /^\s*implementation\s*[('"]([^'"]+)['")]/, kind: 'dependency' },
+    { re: /^\s*api\s*[('"]([^'"]+)['")]/, kind: 'dependency' },
   ]);
   return makePartialFile(relativePath, 'gradle', [], symbols);
 }
@@ -1177,7 +1343,12 @@ function summarizeEnvFile(relativePath: string, source: string): Omit<RepoMapFil
     if (!trimmed || trimmed.startsWith('#')) continue;
     const m = /^([A-Za-z_][A-Za-z0-9_]*)(?:\s*=|\s*:)/.exec(trimmed);
     if (m?.[1]) {
-      symbols.push({ name: m[1], kind: 'config', line: i + 1, signature: `${m[1]}=***REDACTED***` });
+      symbols.push({
+        name: m[1],
+        kind: 'config',
+        line: i + 1,
+        signature: `${m[1]}=***REDACTED***`,
+      });
     }
   }
   return makePartialFile(relativePath, 'env', [], symbols);
@@ -1203,7 +1374,10 @@ function summarizeLogFile(relativePath: string, source: string): Omit<RepoMapFil
 }
 
 // GDScript (.gd) — Godot Engine scripting language (no WASM grammar available)
-function summarizeGdscriptFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeGdscriptFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols: RepoSymbol[] = [];
@@ -1215,42 +1389,73 @@ function summarizeGdscriptFile(relativePath: string, source: string): Omit<RepoM
 
     // extends ClassName → import
     const ext = /^extends\s+([\w.]+)/.exec(trimmed);
-    if (ext?.[1]) { imports.push(ext[1]); continue; }
+    if (ext?.[1]) {
+      imports.push(ext[1]);
+      continue;
+    }
 
     // class_name MyName → class
     const cn = /^class_name\s+(\w+)/.exec(trimmed);
-    if (cn?.[1]) { symbols.push({ name: cn[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (cn?.[1]) {
+      symbols.push({ name: cn[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // func my_func(...): → function
     const fn = /^func\s+(\w+)\s*\(/.exec(trimmed);
-    if (fn?.[1]) { symbols.push({ name: fn[1], kind: 'function', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (fn?.[1]) {
+      symbols.push({
+        name: fn[1],
+        kind: 'function',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // signal my_signal → signal (Godot-specific)
     const sig = /^signal\s+(\w+)/.exec(trimmed);
-    if (sig?.[1]) { symbols.push({ name: sig[1], kind: 'signal', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (sig?.[1]) {
+      symbols.push({ name: sig[1], kind: 'signal', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // enum MyEnum { ... } → enum
     const en = /^enum\s+(\w+)/.exec(trimmed);
-    if (en?.[1]) { symbols.push({ name: en[1], kind: 'enum', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (en?.[1]) {
+      symbols.push({ name: en[1], kind: 'enum', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // class InnerClass: → inner class
     const ic = /^class\s+(\w+)\s*(?:extends\s+\w+)?\s*:/.exec(trimmed);
-    if (ic?.[1]) { symbols.push({ name: ic[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (ic?.[1]) {
+      symbols.push({ name: ic[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // const MAX = ... / const MAX := ... → const (:= is GDScript walrus)
     const co = /^const\s+(\w+)\s*(?::\s*\w+)?\s*:?=/.exec(trimmed);
-    if (co?.[1]) { symbols.push({ name: co[1], kind: 'const', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (co?.[1]) {
+      symbols.push({ name: co[1], kind: 'const', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // @export var / @onready var / var → var
     const va = /^(?:@\w+\s+)*var\s+(\w+)/.exec(trimmed);
-    if (va?.[1]) { symbols.push({ name: va[1], kind: 'var', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (va?.[1]) {
+      symbols.push({ name: va[1], kind: 'var', line: i + 1, signature: trimmed.slice(0, 120) });
+    }
   }
 
   return makePartialFile(relativePath, 'gdscript', imports.slice(0, 8), symbols);
 }
 
 // MATLAB / Octave (.m) — function, classdef, sections, properties/methods blocks
-function summarizeMatlabFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeMatlabFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols: RepoSymbol[] = [];
@@ -1262,39 +1467,70 @@ function summarizeMatlabFile(relativePath: string, source: string): Omit<RepoMap
 
     // %% Section Title (Live Script / script section markers)
     const sec = /^%%\s*(.+)/.exec(trimmed);
-    if (sec?.[1]) { symbols.push({ name: sec[1].trim(), kind: 'section', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (sec?.[1]) {
+      symbols.push({
+        name: sec[1].trim(),
+        kind: 'section',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // Skip other comments
     if (trimmed.startsWith('%')) continue;
 
     // classdef ClassName or classdef ClassName < SuperClass
     const cd = /^classdef\s+(\w+)/.exec(trimmed);
-    if (cd?.[1]) { symbols.push({ name: cd[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (cd?.[1]) {
+      symbols.push({ name: cd[1], kind: 'class', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // function [out1,out2] = name(args)  |  function out = name(args)  |  function name(args)  |  function name
     // Pattern: after 'function', optional return spec (word/bracket before '='), then the function name
     const fn = /^function\s+(?:[\w\s,[\]]+?=\s*)?(\w+)\s*(?:\(|$)/.exec(trimmed);
-    if (fn?.[1] && fn[1] !== 'end') { symbols.push({ name: fn[1], kind: 'function', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (fn?.[1] && fn[1] !== 'end') {
+      symbols.push({
+        name: fn[1],
+        kind: 'function',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // properties / methods / events / enumeration block keywords (inside classdef)
     const blk = /^(properties|methods|events|enumeration)\s*(?:\(|%|$)/.exec(trimmed);
-    if (blk?.[1]) { symbols.push({ name: blk[1], kind: 'block', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (blk?.[1]) {
+      symbols.push({ name: blk[1], kind: 'block', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // import java.util.*  /  addpath(...)
     const imp = /^(?:import|addpath)\s+['"]?([^\s'"(]+)/.exec(trimmed);
-    if (imp?.[1]) { imports.push(imp[1]); continue; }
+    if (imp?.[1]) {
+      imports.push(imp[1]);
+    }
   }
 
   return makePartialFile(relativePath, 'matlab', imports.slice(0, 8), symbols);
 }
 
 // GitHub Actions / CI YAML — detected by content (has 'on:' trigger + 'jobs:' sections)
-function summarizeGithubActionsFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeGithubActionsFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   // Raw-text detection first — js-yaml YAML 1.1 parses 'on' as boolean true
   if (!/^on\s*:/m.test(source) || !/^jobs\s*:/m.test(source)) return null;
 
   let parsed: unknown;
-  try { parsed = yaml.load(source); } catch { return null; }
+  try {
+    parsed = yaml.load(source);
+  } catch {
+    return null;
+  }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   const doc = parsed as Record<string, unknown>;
 
@@ -1307,10 +1543,31 @@ function summarizeGithubActionsFile(relativePath: string, source: string): Omit<
   }
 
   // Triggers from raw source (YAML 1.1 parses 'on' as true, so we use regex)
-  const knownTriggers = ['push','pull_request','workflow_dispatch','schedule','release','issues','create','delete','workflow_call','issue_comment','check_run','deployment','fork','label','milestone','public','watch'];
+  const knownTriggers = [
+    'push',
+    'pull_request',
+    'workflow_dispatch',
+    'schedule',
+    'release',
+    'issues',
+    'create',
+    'delete',
+    'workflow_call',
+    'issue_comment',
+    'check_run',
+    'deployment',
+    'fork',
+    'label',
+    'milestone',
+    'public',
+    'watch',
+  ];
   const foundTriggers: string[] = [];
   for (const t of knownTriggers) {
-    if (new RegExp(`^[ \\t]+${t}\\b`, 'm').test(source) || new RegExp(`^on:\\s*\\[?[^\\n]*\\b${t}\\b`, 'm').test(source)) {
+    if (
+      new RegExp(`^[ \\t]+${t}\\b`, 'm').test(source) ||
+      new RegExp(`^on:\\s*\\[?[^\\n]*\\b${t}\\b`, 'm').test(source)
+    ) {
       foundTriggers.push(t);
     }
   }
@@ -1345,7 +1602,18 @@ function summarizeNixFile(relativePath: string, source: string): Omit<RepoMapFil
   const imports: string[] = [];
   const symbols: RepoSymbol[] = [];
   const seen = new Set<string>();
-  const skipWords = new Set(['let','in','if','then','else','with','assert','rec','inherit','builtins']);
+  const skipWords = new Set([
+    'let',
+    'in',
+    'if',
+    'then',
+    'else',
+    'with',
+    'assert',
+    'rec',
+    'inherit',
+    'builtins',
+  ]);
 
   for (const [i, line] of lines.entries()) {
     if (symbols.length >= 36) break;
@@ -1361,18 +1629,34 @@ function summarizeNixFile(relativePath: string, source: string): Omit<RepoMapFil
       const attr = /^([\w][\w-]*)\s*=/.exec(trimmed);
       if (attr?.[1] && !skipWords.has(attr[1]) && !seen.has(attr[1])) {
         seen.add(attr[1]);
-        const isMk = /\bmk(Derivation|Shell|Package|PythonApp|HaskellApp)\b|\bstdenv\.mkDerivation\b/.test(trimmed);
-        symbols.push({ name: attr[1], kind: isMk ? 'derivation' : 'attr', line: i + 1, signature: trimmed.slice(0, 120) });
+        const isMk =
+          /\bmk(Derivation|Shell|Package|PythonApp|HaskellApp)\b|\bstdenv\.mkDerivation\b/.test(
+            trimmed,
+          );
+        symbols.push({
+          name: attr[1],
+          kind: isMk ? 'derivation' : 'attr',
+          line: i + 1,
+          signature: trimmed.slice(0, 120),
+        });
       }
     }
 
     // mkDerivation / mkShell with pname/name on same line
-    const mkCall = /\b(mkDerivation|mkShell|mkPackage|stdenv\.mkDerivation)\s*(?:\{|rec\s*\{)/.exec(trimmed);
+    const mkCall = /\b(mkDerivation|mkShell|mkPackage|stdenv\.mkDerivation)\s*(?:\{|rec\s*\{)/.exec(
+      trimmed,
+    );
     if (mkCall) {
-      const pname = /\bpname\s*=\s*"([^"]+)"/.exec(trimmed) ?? /\bname\s*=\s*"([^"]+)"/.exec(trimmed);
+      const pname =
+        /\bpname\s*=\s*"([^"]+)"/.exec(trimmed) ?? /\bname\s*=\s*"([^"]+)"/.exec(trimmed);
       if (pname?.[1] && !seen.has(pname[1])) {
         seen.add(pname[1]);
-        symbols.push({ name: pname[1], kind: 'derivation', line: i + 1, signature: trimmed.slice(0, 120) });
+        symbols.push({
+          name: pname[1],
+          kind: 'derivation',
+          line: i + 1,
+          signature: trimmed.slice(0, 120),
+        });
       }
     }
   }
@@ -1381,9 +1665,16 @@ function summarizeNixFile(relativePath: string, source: string): Omit<RepoMapFil
 }
 
 // Jupyter Notebook (.ipynb) — cell headings, code defs, imports
-function summarizeJupyterFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeJupyterFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   let parsed: unknown;
-  try { parsed = JSON.parse(source); } catch { return null; }
+  try {
+    parsed = JSON.parse(source);
+  } catch {
+    return null;
+  }
   const nb = parsed as Record<string, unknown>;
   if (!Array.isArray(nb.cells)) return null;
 
@@ -1407,16 +1698,29 @@ function summarizeJupyterFile(relativePath: string, source: string): Omit<RepoMa
     if (cellType === 'markdown') {
       const h = /^(#{1,4})\s+(.+)/m.exec(src);
       if (h?.[2] && h[1]) {
-        symbols.push({ name: h[2].trim(), kind: `h${h[1].length}`, line: lineNum, signature: h[0].trim().slice(0, 120) });
+        symbols.push({
+          name: h[2].trim(),
+          kind: `h${h[1].length}`,
+          line: lineNum,
+          signature: h[0].trim().slice(0, 120),
+        });
       }
     } else if (cellType === 'code') {
       for (const raw of src.split('\n').slice(0, 30)) {
         const t = raw.trim();
         const pyImp = /^(?:import|from)\s+([\w.]+)/.exec(t);
-        if (pyImp?.[1] && !imports.includes(pyImp[1])) { imports.push(pyImp[1]); continue; }
+        if (pyImp?.[1] && !imports.includes(pyImp[1])) {
+          imports.push(pyImp[1]);
+          continue;
+        }
         const def = /^(?:def|async def|class)\s+(\w+)/.exec(t);
         if (def?.[1]) {
-          symbols.push({ name: def[1], kind: t.startsWith('class') ? 'class' : 'function', line: lineNum, signature: t.slice(0, 120) });
+          symbols.push({
+            name: def[1],
+            kind: t.startsWith('class') ? 'class' : 'function',
+            line: lineNum,
+            signature: t.slice(0, 120),
+          });
         }
       }
     }
@@ -1428,7 +1732,10 @@ function summarizeJupyterFile(relativePath: string, source: string): Omit<RepoMa
 }
 
 // yarn.lock — package name + version entries
-function summarizeYarnLockFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeYarnLockFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
 
@@ -1442,7 +1749,10 @@ function summarizeYarnLockFile(relativePath: string, source: string): Omit<RepoM
     let version = '?';
     for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
       const vMatch = /^\s+version\s+"?([^\s"]+)"?/.exec(lines[j] ?? '');
-      if (vMatch?.[1]) { version = vMatch[1]; break; }
+      if (vMatch?.[1]) {
+        version = vMatch[1];
+        break;
+      }
     }
     symbols.push({ name: m[1], kind: 'package', line: i + 1, signature: `${m[1]}@${version}` });
   }
@@ -1451,7 +1761,10 @@ function summarizeYarnLockFile(relativePath: string, source: string): Omit<RepoM
 }
 
 // Cargo.lock — Rust crate names + versions
-function summarizeCargoLockFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeCargoLockFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   let name = '';
@@ -1467,11 +1780,19 @@ function summarizeCargoLockFile(relativePath: string, source: string): Omit<Repo
 
   for (const [i, line] of lines.entries()) {
     const trimmed = line.trim();
-    if (trimmed === '[[package]]') { flush(i + 1); continue; }
+    if (trimmed === '[[package]]') {
+      flush(i + 1);
+      continue;
+    }
     const nm = /^name\s*=\s*"([^"]+)"/.exec(trimmed);
-    if (nm?.[1]) { name = nm[1]; continue; }
+    if (nm?.[1]) {
+      name = nm[1];
+      continue;
+    }
     const vm = /^version\s*=\s*"([^"]+)"/.exec(trimmed);
-    if (vm?.[1]) { version = vm[1]; continue; }
+    if (vm?.[1]) {
+      version = vm[1];
+    }
   }
   flush(lines.length);
 
@@ -1479,7 +1800,10 @@ function summarizeCargoLockFile(relativePath: string, source: string): Omit<Repo
 }
 
 // Gemfile.lock — Ruby gem names + versions from SPECS section
-function summarizeGemfileLockFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeGemfileLockFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const symbols: RepoSymbol[] = [];
   let inSpecs = false;
@@ -1487,9 +1811,17 @@ function summarizeGemfileLockFile(relativePath: string, source: string): Omit<Re
   for (const [i, line] of lines.entries()) {
     if (symbols.length >= 36) break;
     const trimmed = line.trim();
-    if (trimmed === 'specs:') { inSpecs = true; continue; }
-    if (trimmed === '' && inSpecs) { inSpecs = false; continue; }
-    if (/^[A-Z]/.test(trimmed)) { inSpecs = false; }
+    if (trimmed === 'specs:') {
+      inSpecs = true;
+      continue;
+    }
+    if (trimmed === '' && inSpecs) {
+      inSpecs = false;
+      continue;
+    }
+    if (/^[A-Z]/.test(trimmed)) {
+      inSpecs = false;
+    }
 
     // 4-space-indented top-level gems: "    name (version)"
     if (inSpecs && /^ {4}\S/.test(line)) {
@@ -1504,11 +1836,21 @@ function summarizeGemfileLockFile(relativePath: string, source: string): Omit<Re
 }
 
 // composer.lock — PHP Composer package names + versions (JSON format)
-function summarizeComposerLockFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeComposerLockFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   let parsed: unknown;
-  try { parsed = JSON.parse(source); } catch { return null; }
+  try {
+    parsed = JSON.parse(source);
+  } catch {
+    return null;
+  }
   const lock = parsed as Record<string, unknown>;
-  const allPkgs = [...(Array.isArray(lock.packages) ? lock.packages : []), ...(Array.isArray(lock['packages-dev']) ? lock['packages-dev'] : [])];
+  const allPkgs = [
+    ...(Array.isArray(lock.packages) ? lock.packages : []),
+    ...(Array.isArray(lock['packages-dev']) ? lock['packages-dev'] : []),
+  ];
   const symbols: RepoSymbol[] = [];
 
   for (const pkg of allPkgs.slice(0, 36)) {
@@ -1534,42 +1876,88 @@ function summarizeWatFile(relativePath: string, source: string): Omit<RepoMapFil
 
     // (import "module" "name" ...) → import
     const imp = /\(import\s+"([^"]+)"\s+"([^"]+)"/.exec(trimmed);
-    if (imp?.[1] && imp[2]) { imports.push(`${imp[1]}::${imp[2]}`); continue; }
+    if (imp?.[1] && imp[2]) {
+      imports.push(`${imp[1]}::${imp[2]}`);
+      continue;
+    }
 
     // (func $name ...) — named function
     const namedFn = /\(func\s+(\$[\w.]+)/.exec(trimmed);
-    if (namedFn?.[1]) { symbols.push({ name: namedFn[1], kind: 'func', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (namedFn?.[1]) {
+      symbols.push({
+        name: namedFn[1],
+        kind: 'func',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // (func (export "name") ...) — anonymous exported function
     const expFn = /\(func\s+\(export\s+"([^"]+)"\)/.exec(trimmed);
-    if (expFn?.[1]) { symbols.push({ name: `export:${expFn[1]}`, kind: 'func', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (expFn?.[1]) {
+      symbols.push({
+        name: `export:${expFn[1]}`,
+        kind: 'func',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // (export "name" ...) — standalone export declaration
     const exp = /^\(export\s+"([^"]+)"/.exec(trimmed);
-    if (exp?.[1]) { symbols.push({ name: exp[1], kind: 'export', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (exp?.[1]) {
+      symbols.push({ name: exp[1], kind: 'export', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // (global $name ...) — global variable
     const glob = /\(global\s+(\$[\w.]+)/.exec(trimmed);
-    if (glob?.[1]) { symbols.push({ name: glob[1], kind: 'global', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (glob?.[1]) {
+      symbols.push({
+        name: glob[1],
+        kind: 'global',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // (type $name ...) — type definition
     const type_ = /\(type\s+(\$[\w.]+)/.exec(trimmed);
-    if (type_?.[1]) { symbols.push({ name: type_[1], kind: 'type', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (type_?.[1]) {
+      symbols.push({ name: type_[1], kind: 'type', line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // (memory ...) / (table ...) — module resources
     const res = /^\((memory|table)\b/.exec(trimmed);
-    if (res?.[1]) { symbols.push({ name: res[1], kind: res[1], line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (res?.[1]) {
+      symbols.push({ name: res[1], kind: res[1], line: i + 1, signature: trimmed.slice(0, 120) });
+      continue;
+    }
 
     // (data ...) / (elem ...) — data segments
     const seg = /^\((data|elem)\b/.exec(trimmed);
-    if (seg?.[1]) { symbols.push({ name: seg[1], kind: 'segment', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (seg?.[1]) {
+      symbols.push({
+        name: seg[1],
+        kind: 'segment',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+    }
   }
 
   return makePartialFile(relativePath, 'webassembly', imports.slice(0, 8), symbols);
 }
 
 // Assembly (.asm, .s, .S, .nasm) — supports NASM (Intel), GAS (AT&T), and ARM syntax
-function summarizeAssemblyFile(relativePath: string, source: string): Omit<RepoMapFile, 'lines'> | null {
+function summarizeAssemblyFile(
+  relativePath: string,
+  source: string,
+): Omit<RepoMapFile, 'lines'> | null {
   const lines = source.split(/\r?\n/);
   const imports: string[] = [];
   const symbols: RepoSymbol[] = [];
@@ -1584,45 +1972,120 @@ function summarizeAssemblyFile(relativePath: string, source: string): Omit<RepoM
 
     // GAS .type name, @function → function label
     const gasTypeFn = /^\.type\s+(\w+)\s*,\s*[@%]function/i.exec(trimmed);
-    if (gasTypeFn?.[1]) { symbols.push({ name: gasTypeFn[1], kind: 'function', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (gasTypeFn?.[1]) {
+      symbols.push({
+        name: gasTypeFn[1],
+        kind: 'function',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // NASM %macro name / GAS .macro name → macro definition
     const macroDecl = /^(?:%macro|\.macro)\s+(\w+)/i.exec(trimmed);
-    if (macroDecl?.[1]) { symbols.push({ name: macroDecl[1], kind: 'macro', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (macroDecl?.[1]) {
+      symbols.push({
+        name: macroDecl[1],
+        kind: 'macro',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // NASM %define NAME / GAS .equ NAME / ARM .set NAME → constants
     const constDecl = /^(?:%define|\.equ|\.set|\.equiv)\s+(\w+)/i.exec(trimmed);
-    if (constDecl?.[1]) { symbols.push({ name: constDecl[1], kind: 'const', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (constDecl?.[1]) {
+      symbols.push({
+        name: constDecl[1],
+        kind: 'const',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // MASM/NASM EQU: NAME EQU value
     const equDecl = /^(\w+)\s+EQU\s+/i.exec(trimmed);
-    if (equDecl?.[1]) { symbols.push({ name: equDecl[1], kind: 'const', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (equDecl?.[1]) {
+      symbols.push({
+        name: equDecl[1],
+        kind: 'const',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // NASM global / GAS .global → exported symbols
     const globalDecl = /^(?:global|\.global|\.globl)\s+(\w+)/i.exec(trimmed);
-    if (globalDecl?.[1]) { symbols.push({ name: globalDecl[1], kind: 'global', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    if (globalDecl?.[1]) {
+      symbols.push({
+        name: globalDecl[1],
+        kind: 'global',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // NASM extern / GAS .extern → imports
     const externDecl = /^(?:extern|\.extern)\s+(\w+)/i.exec(trimmed);
-    if (externDecl?.[1]) { imports.push(externDecl[1]); continue; }
+    if (externDecl?.[1]) {
+      imports.push(externDecl[1]);
+      continue;
+    }
 
     // Section markers: NASM "section .text" / GAS ".text" / ".section .data"
-    const sectionDecl = /^(?:section\s+)?(\.(text|data|bss|rodata|code|const|init|fini|plt|got|tdata|tbss))\b/i.exec(trimmed);
-    if (sectionDecl?.[1]) { symbols.push({ name: sectionDecl[1], kind: 'section', line: i + 1, signature: trimmed.slice(0, 120) }); continue; }
+    const sectionDecl =
+      /^(?:section\s+)?(\.(text|data|bss|rodata|code|const|init|fini|plt|got|tdata|tbss))\b/i.exec(
+        trimmed,
+      );
+    if (sectionDecl?.[1]) {
+      symbols.push({
+        name: sectionDecl[1],
+        kind: 'section',
+        line: i + 1,
+        signature: trimmed.slice(0, 120),
+      });
+      continue;
+    }
 
     // GAS .include / NASM %include → file imports
     const includeDecl = /^(?:\.include|%include)\s+["']([^"']+)["']/i.exec(trimmed);
-    if (includeDecl?.[1]) { imports.push(includeDecl[1]); continue; }
+    if (includeDecl?.[1]) {
+      imports.push(includeDecl[1]);
+      continue;
+    }
 
     // Top-level labels only (lines not starting with whitespace): name:
     if (!line.startsWith(' ') && !line.startsWith('\t')) {
       const labelDecl = /^(\w+)\s*:(?:\s|$)/.exec(trimmed);
       if (labelDecl?.[1]) {
         // Skip data directives used as label names
-        const skip = new Set(['DB', 'DW', 'DD', 'DQ', 'DT', 'RESB', 'RESW', 'RESD', 'RESQ', 'BYTE', 'WORD', 'DWORD', 'QWORD']);
+        const skip = new Set([
+          'DB',
+          'DW',
+          'DD',
+          'DQ',
+          'DT',
+          'RESB',
+          'RESW',
+          'RESD',
+          'RESQ',
+          'BYTE',
+          'WORD',
+          'DWORD',
+          'QWORD',
+        ]);
         if (!skip.has(labelDecl[1].toUpperCase())) {
-          symbols.push({ name: labelDecl[1], kind: 'label', line: i + 1, signature: trimmed.slice(0, 120) });
-          continue;
+          symbols.push({
+            name: labelDecl[1],
+            kind: 'label',
+            line: i + 1,
+            signature: trimmed.slice(0, 120),
+          });
         }
       }
     }
@@ -1933,8 +2396,9 @@ function extractCsharpFieldName(node: Node): string | null {
   if (!varDecl) return null;
   const varDecltor = varDecl.namedChildren.find((c) => c.type === 'variable_declarator');
   if (!varDecltor) return null;
-  const nameNode = varDecltor.childForFieldName('name')
-    ?? varDecltor.namedChildren.find((c) => c.type === 'identifier');
+  const nameNode =
+    varDecltor.childForFieldName('name') ??
+    varDecltor.namedChildren.find((c) => c.type === 'identifier');
   return nameNode?.text?.trim() ?? null;
 }
 
@@ -1947,7 +2411,11 @@ function extractCppFunctionName(node: Node): string | null {
       case 'function_declarator': {
         const inner = decl.childForFieldName('declarator');
         if (!inner) return null;
-        if (inner.type === 'identifier' || inner.type === 'destructor_name' || inner.type === 'operator_name') {
+        if (
+          inner.type === 'identifier' ||
+          inner.type === 'destructor_name' ||
+          inner.type === 'operator_name'
+        ) {
           return inner.text?.trim() ?? null;
         }
         if (inner.type === 'qualified_identifier') {
@@ -1962,7 +2430,8 @@ function extractCppFunctionName(node: Node): string | null {
       case 'rvalue_reference_declarator': {
         decl =
           decl.childForFieldName('declarator') ??
-          (decl.namedChildren.find((c) => c.type.includes('declarator')) ?? null);
+          decl.namedChildren.find((c) => c.type.includes('declarator')) ??
+          null;
         break;
       }
       case 'identifier':
@@ -2120,14 +2589,22 @@ async function summarizePdfBinary(
       const textResult = await parser.getText();
       text = textResult.text ?? '';
       totalPages = textResult.pages?.length ?? 1;
-    } catch { /* best effort */ }
+    } catch {
+      /* best effort */
+    }
 
     try {
       const infoResult = await parser.getInfo();
       meta = infoResult.info as Record<string, unknown> | undefined;
-    } catch { /* best effort */ }
+    } catch {
+      /* best effort */
+    }
 
-    try { await parser.destroy(); } catch { /* ignore */ }
+    try {
+      await parser.destroy();
+    } catch {
+      /* ignore */
+    }
 
     if (!text.trim()) return null;
 
@@ -2139,7 +2616,12 @@ async function summarizePdfBinary(
       symbols.push({ name: meta.Title, kind: 'title', line: 1, signature: `Title: ${meta.Title}` });
     }
     if (meta?.Author && typeof meta.Author === 'string') {
-      symbols.push({ name: meta.Author, kind: 'author', line: 1, signature: `Author: ${meta.Author}` });
+      symbols.push({
+        name: meta.Author,
+        kind: 'author',
+        line: 1,
+        signature: `Author: ${meta.Author}`,
+      });
     }
 
     // Extract headings (lines that look like titles: short, no punctuation at end, <= 80 chars)
@@ -2147,10 +2629,18 @@ async function summarizePdfBinary(
     for (const line of lines) {
       if (symbols.length >= 36) break;
       const trimmed = line.trim();
-      if (!trimmed || trimmed.length > 100) { lineNum++; continue; }
+      if (!trimmed || trimmed.length > 100) {
+        lineNum++;
+        continue;
+      }
       // Heuristic: headings are relatively short, start with uppercase, no period at end
       if (trimmed.length <= 80 && /^[A-ZÀ-ÿ0-9]/.test(trimmed) && !trimmed.endsWith('.')) {
-        symbols.push({ name: trimmed, kind: 'heading', line: lineNum, signature: trimmed.slice(0, 120) });
+        symbols.push({
+          name: trimmed,
+          kind: 'heading',
+          line: lineNum,
+          signature: trimmed.slice(0, 120),
+        });
       }
       lineNum++;
     }
@@ -2160,7 +2650,12 @@ async function summarizePdfBinary(
       for (const line of lines.slice(0, 10)) {
         const t = line.trim();
         if (t && symbols.length < 6) {
-          symbols.push({ name: t.slice(0, 60), kind: 'paragraph', line: 1, signature: t.slice(0, 120) });
+          symbols.push({
+            name: t.slice(0, 60),
+            kind: 'paragraph',
+            line: 1,
+            signature: t.slice(0, 120),
+          });
         }
       }
     }
@@ -2181,10 +2676,7 @@ async function summarizePdfBinary(
 }
 
 // DOCX extractor — unzips the DOCX (ZIP), extracts word/document.xml, parses <w:t> elements
-function summarizeDocxBinary(
-  relativePath: string,
-  absolutePath: string,
-): RepoMapFile | null {
+function summarizeDocxBinary(relativePath: string, absolutePath: string): RepoMapFile | null {
   const buf = readBinaryFile(absolutePath);
   if (!buf) return null;
 
@@ -2217,14 +2709,22 @@ function summarizeDocxBinary(
       }
 
       const text = parts.join('').trim();
-      if (!text || text.length < 2) { lineNum++; continue; }
+      if (!text || text.length < 2) {
+        lineNum++;
+        continue;
+      }
 
       // Check for heading style (w:pStyle with Heading)
       const isHeading = /<w:pStyle[^>]*w:val="Heading/i.test(paraContent);
       const kind = isHeading ? 'heading' : 'paragraph';
 
       if (isHeading || symbols.length < 12) {
-        symbols.push({ name: text.slice(0, 80), kind, line: lineNum, signature: text.slice(0, 120) });
+        symbols.push({
+          name: text.slice(0, 80),
+          kind,
+          line: lineNum,
+          signature: text.slice(0, 120),
+        });
       }
       lineNum++;
     }

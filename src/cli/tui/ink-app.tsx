@@ -1,7 +1,6 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { Box, Text, useApp, useInput } from 'ink';
-// biome-ignore lint/style/useImportType: React must be a value import for JSX runtime
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -37,8 +36,8 @@ import {
   compactSession,
   createProviderProfile,
   createRun,
-  deleteProviderProfile,
   createThread,
+  deleteProviderProfile,
   detectImportableThreads,
   exportThread,
   forkThread,
@@ -1459,7 +1458,7 @@ export function UmbraInkApp({
               ? 'reasoning_effort: high + temperature: 1.0'
               : profile === 'openai-o'
                 ? `reasoning_effort: ${arg}`
-                : `Anthropic budget_tokens mapped`;
+                : 'Anthropic budget_tokens mapped';
           appendEntries([
             {
               id: createEntryId(),
@@ -1801,6 +1800,7 @@ export function UmbraInkApp({
   }, [projectPath]);
 
   // Register skill-based slash commands on mount, project change, or after skill creation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: skillsEpoch is an epoch counter — intentional trigger, not a value used inside the effect
   useEffect(() => {
     try {
       const { skills } = loadSkills({ projectPath });
@@ -2771,9 +2771,12 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
         <Text color={umbraTheme.danger}>
           Connect a free provider now? OpenCode Zen works without an API key.
         </Text>
-        <Text color={umbraTheme.muted}>↑↓ navigate  Enter select  Esc skip</Text>
+        <Text color={umbraTheme.muted}>↑↓ navigate Enter select Esc skip</Text>
         {items.map((item, index) => (
-          <Text key={item} color={index === state.selectedIndex ? umbraTheme.danger : umbraTheme.text}>
+          <Text
+            key={item}
+            color={index === state.selectedIndex ? umbraTheme.danger : umbraTheme.text}
+          >
             {index === state.selectedIndex ? '>' : ' '} {item}
           </Text>
         ))}
@@ -2826,25 +2829,32 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
   if (state.kind === 'web-mode') {
     const modeItems = [
       { id: 'off', label: 'Off', summary: 'Disable web search', mode: 'off' as const },
-      { id: 'cached', label: 'Cached', summary: 'Search with result caching', mode: 'cached' as const },
+      {
+        id: 'cached',
+        label: 'Cached',
+        summary: 'Search with result caching',
+        mode: 'cached' as const,
+      },
       { id: 'live', label: 'Live', summary: 'Always fetch fresh results', mode: 'live' as const },
     ];
     return (
       <Box marginTop={1} flexDirection="column">
         <Text color={umbraTheme.accent}>Web Search</Text>
-        <Text color={umbraTheme.muted}>↑↓ navigate  Enter apply  Esc close</Text>
+        <Text color={umbraTheme.muted}>↑↓ navigate Enter apply Esc close</Text>
         <Text color={umbraTheme.muted}>── Mode ──────────────────────</Text>
         {modeItems.map((item, index) => {
           const isSelected = index === state.selectedIndex;
           const isCurrent = item.mode === state.currentMode;
           return (
             <Box key={item.id} flexDirection="row">
-              <Text color={isSelected ? umbraTheme.accent : isCurrent ? umbraTheme.success : umbraTheme.text}>
+              <Text
+                color={
+                  isSelected ? umbraTheme.accent : isCurrent ? umbraTheme.success : umbraTheme.text
+                }
+              >
                 {isSelected ? '>' : isCurrent ? '*' : ' '} {item.label.padEnd(8, ' ')}
               </Text>
-              <Text color={umbraTheme.muted}>
-                {item.summary}
-              </Text>
+              <Text color={umbraTheme.muted}>{item.summary}</Text>
             </Box>
           );
         })}
@@ -2856,7 +2866,11 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
           const isSelected = globalIndex === state.selectedIndex;
           return (
             <Box key={p.id} flexDirection="row">
-              <Text color={isSelected ? umbraTheme.accent : p.selected ? umbraTheme.success : umbraTheme.text}>
+              <Text
+                color={
+                  isSelected ? umbraTheme.accent : p.selected ? umbraTheme.success : umbraTheme.text
+                }
+              >
                 {isSelected ? '>' : p.selected ? '*' : ' '} {p.label.padEnd(22, ' ')}
               </Text>
               <Text color={p.configured ? umbraTheme.muted : umbraTheme.warning}>
@@ -2885,7 +2899,7 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
           {p.configured ? '✓ configured' : '⚠ not configured — set API key below'}
         </Text>
         <Text color={umbraTheme.muted}>base URL: {p.baseUrl}</Text>
-        <Text color={umbraTheme.muted}>↑↓ navigate  Enter select  Esc back</Text>
+        <Text color={umbraTheme.muted}>↑↓ navigate Enter select Esc back</Text>
         {items.map((item, index) => (
           <Box key={item.id} flexDirection="row" marginTop={0}>
             <Text color={index === state.selectedIndex ? umbraTheme.accent : umbraTheme.text}>
@@ -2901,10 +2915,16 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
     return (
       <Box marginTop={1} flexDirection="column">
         <Text color={umbraTheme.accent}>API key — {state.provider.label}</Text>
-        <Text color={umbraTheme.muted}>{state.provider.configured ? 'Key is set. Enter new key or leave empty to clear.' : 'Paste or type the API key.'}</Text>
-        <Text color={umbraTheme.muted}>Ctrl+Y paste  Enter save  Esc back</Text>
+        <Text color={umbraTheme.muted}>
+          {state.provider.configured
+            ? 'Key is set. Enter new key or leave empty to clear.'
+            : 'Paste or type the API key.'}
+        </Text>
+        <Text color={umbraTheme.muted}>Ctrl+Y paste Enter save Esc back</Text>
         {state.clipboardPreview ? (
-          <Text color={umbraTheme.code}>clipboard: {maskSecretPreview(state.clipboardPreview)}</Text>
+          <Text color={umbraTheme.code}>
+            clipboard: {maskSecretPreview(state.clipboardPreview)}
+          </Text>
         ) : null}
         <Box marginTop={1}>
           <Text color={umbraTheme.accent}>{'> '}</Text>
@@ -2918,8 +2938,10 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
     return (
       <Box marginTop={1} flexDirection="column">
         <Text color={umbraTheme.accent}>Base URL — {state.provider.label}</Text>
-        <Text color={umbraTheme.muted}>Default: {state.provider.baseUrl}  (leave empty to reset)</Text>
-        <Text color={umbraTheme.muted}>Ctrl+Y paste  Enter save  Esc back</Text>
+        <Text color={umbraTheme.muted}>
+          Default: {state.provider.baseUrl} (leave empty to reset)
+        </Text>
+        <Text color={umbraTheme.muted}>Ctrl+Y paste Enter save Esc back</Text>
         {state.clipboardPreview ? (
           <Text color={umbraTheme.code}>clipboard: {truncatePreview(state.clipboardPreview)}</Text>
         ) : null}
@@ -3086,7 +3108,11 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
         {visible.map((provider, i) => {
           const index = startIndex + i;
           const isZen = provider.value === 'opencode-zen';
-          const labelColor = isZen ? umbraTheme.danger : index === state.selectedIndex ? umbraTheme.accent : umbraTheme.text;
+          const labelColor = isZen
+            ? umbraTheme.danger
+            : index === state.selectedIndex
+              ? umbraTheme.accent
+              : umbraTheme.text;
           return (
             <Box key={provider.value}>
               <Text color={labelColor}>
@@ -3169,7 +3195,9 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
           );
         })}
         {hasBelow ? (
-          <Text color={umbraTheme.muted}>{`  ↓ ${items.length - startIndex - visible.length} more`}</Text>
+          <Text
+            color={umbraTheme.muted}
+          >{`  ↓ ${items.length - startIndex - visible.length} more`}</Text>
         ) : null}
       </Box>
     );
@@ -3636,19 +3664,27 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
         <Text color={umbraTheme.accent}>Custom provider</Text>
         <Text color={umbraTheme.muted}>OpenAI-compatible endpoint</Text>
         {isConfirm ? (
-          <Text color={umbraTheme.muted}>Tab — back to edit  Enter — create  Esc — cancel</Text>
+          <Text color={umbraTheme.muted}>Tab — back to edit Enter — create Esc — cancel</Text>
         ) : (
-          <Text color={umbraTheme.muted}>Tab — next field  Ctrl+Y — paste  Enter — confirm</Text>
+          <Text color={umbraTheme.muted}>Tab — next field Ctrl+Y — paste Enter — confirm</Text>
         )}
         {state.clipboardPreview ? (
           <Text color={umbraTheme.code}>clipboard: {truncatePreview(state.clipboardPreview)}</Text>
         ) : null}
         {rows.map((row) => (
           <Box key={row.key}>
-            <Text color={!isConfirm && state.activeField === row.key ? umbraTheme.accent : umbraTheme.muted}>
+            <Text
+              color={
+                !isConfirm && state.activeField === row.key ? umbraTheme.accent : umbraTheme.muted
+              }
+            >
               {!isConfirm && state.activeField === row.key ? '>' : ' '} {row.label.padEnd(14, ' ')}
             </Text>
-            <Text color={!isConfirm && state.activeField === row.key ? umbraTheme.text : umbraTheme.frameDim}>
+            <Text
+              color={
+                !isConfirm && state.activeField === row.key ? umbraTheme.text : umbraTheme.frameDim
+              }
+            >
               {row.value || '(empty)'}
             </Text>
           </Box>
@@ -3859,12 +3895,14 @@ async function openProviderRemoveDialog(
   const profiles = payload.profiles;
 
   if (profiles.length === 0) {
-    appendEntries([{
-      id: createEntryId(),
-      kind: 'event',
-      tone: 'info',
-      text: 'system> no provider profiles configured.',
-    }]);
+    appendEntries([
+      {
+        id: createEntryId(),
+        kind: 'event',
+        tone: 'info',
+        text: 'system> no provider profiles configured.',
+      },
+    ]);
     return;
   }
 
@@ -4023,7 +4061,11 @@ async function handleProviderDialogInput(
     (state.kind === 'web-provider-api-key' || state.kind === 'web-provider-base-url') &&
     (key.escape || (key.ctrl && input === 'c'))
   ) {
-    actions.setProviderDialog({ kind: 'web-provider-menu', provider: state.provider, selectedIndex: 0 });
+    actions.setProviderDialog({
+      kind: 'web-provider-menu',
+      provider: state.provider,
+      selectedIndex: 0,
+    });
     return;
   }
   if (state.kind === 'web-provider-menu' && (key.escape || (key.ctrl && input === 'c'))) {
@@ -4094,7 +4136,9 @@ async function handleProviderDialogInput(
       } else if (item.id === 'models') {
         void openModelDialog(actions.setProviderDialog, actions.appendEntries).catch(() => {});
       } else if (item.id === 'remove') {
-        void openProviderRemoveDialog(actions.setProviderDialog, actions.appendEntries).catch(() => {});
+        void openProviderRemoveDialog(actions.setProviderDialog, actions.appendEntries).catch(
+          () => {},
+        );
       } else if (item.id === 'list') {
         actions.setProviderDialog(null);
         void (async () => {
@@ -4405,8 +4449,12 @@ async function handleProviderDialogInput(
       actions.setProviderDialog({
         ...state,
         selectedIndex: key.upArrow
-          ? state.selectedIndex <= 0 ? allCount - 1 : state.selectedIndex - 1
-          : state.selectedIndex >= allCount - 1 ? 0 : state.selectedIndex + 1,
+          ? state.selectedIndex <= 0
+            ? allCount - 1
+            : state.selectedIndex - 1
+          : state.selectedIndex >= allCount - 1
+            ? 0
+            : state.selectedIndex + 1,
       });
       return;
     }
@@ -4414,14 +4462,18 @@ async function handleProviderDialogInput(
     if (key.return) {
       if (state.selectedIndex < modeItems.length) {
         const item = modeItems[state.selectedIndex]!;
-        const updated = (await updateWebSearchSettings({ mode: item.mode })) as WebSearchSettingsPayload;
+        const updated = (await updateWebSearchSettings({
+          mode: item.mode,
+        })) as WebSearchSettingsPayload;
         actions.setProviderDialog(null);
-        actions.appendEntries([{
-          id: createEntryId(),
-          kind: 'event',
-          tone: updated.enabled ? 'success' : 'info',
-          text: `system> web search ${updated.mode} / ${updated.providerLabel}`,
-        }]);
+        actions.appendEntries([
+          {
+            id: createEntryId(),
+            kind: 'event',
+            tone: updated.enabled ? 'success' : 'info',
+            text: `system> web search ${updated.mode} / ${updated.providerLabel}`,
+          },
+        ]);
         void actions.refreshStatus();
       } else {
         const provider = state.providers[state.selectedIndex - modeItems.length];
@@ -4456,8 +4508,12 @@ async function handleProviderDialogInput(
       actions.setProviderDialog({
         ...state,
         selectedIndex: key.upArrow
-          ? state.selectedIndex <= 0 ? items.length - 1 : state.selectedIndex - 1
-          : state.selectedIndex >= items.length - 1 ? 0 : state.selectedIndex + 1,
+          ? state.selectedIndex <= 0
+            ? items.length - 1
+            : state.selectedIndex - 1
+          : state.selectedIndex >= items.length - 1
+            ? 0
+            : state.selectedIndex + 1,
       });
       return;
     }
@@ -4467,13 +4523,17 @@ async function handleProviderDialogInput(
       if (!item) return;
 
       if (item.id === 'use') {
-        const updated = (await updateWebSearchSettings({ providerId: p.id })) as WebSearchSettingsPayload;
-        actions.appendEntries([{
-          id: createEntryId(),
-          kind: 'event',
-          tone: 'success',
-          text: `system> web search provider → ${updated.providerLabel}`,
-        }]);
+        const updated = (await updateWebSearchSettings({
+          providerId: p.id,
+        })) as WebSearchSettingsPayload;
+        actions.appendEntries([
+          {
+            id: createEntryId(),
+            kind: 'event',
+            tone: 'success',
+            text: `system> web search provider → ${updated.providerLabel}`,
+          },
+        ]);
         void actions.refreshStatus();
         const modeOrder = ['off', 'cached', 'live'] as const;
         const modeIndex = modeOrder.indexOf(updated.mode);
@@ -4513,12 +4573,14 @@ async function handleProviderDialogInput(
 
       if (item.id === 'clearkey') {
         await updateWebSearchSettings({ providerConfig: { id: p.id, apiKey: null } });
-        actions.appendEntries([{
-          id: createEntryId(),
-          kind: 'event',
-          tone: 'info',
-          text: `system> API key cleared for ${p.label}`,
-        }]);
+        actions.appendEntries([
+          {
+            id: createEntryId(),
+            kind: 'event',
+            tone: 'info',
+            text: `system> API key cleared for ${p.label}`,
+          },
+        ]);
         const settings = (await getWebSearchSettings()) as WebSearchSettingsPayload;
         const fresh = settings.availableProviders.find((x) => x.id === p.id) ?? p;
         actions.setProviderDialog({ kind: 'web-provider-menu', provider: fresh, selectedIndex: 0 });
@@ -4542,8 +4604,17 @@ async function handleProviderDialogInput(
       actions.setProviderDialog({ ...state, value: val, cursor: val.length });
       return;
     }
-    if (key.leftArrow) { actions.setProviderDialog({ ...state, cursor: Math.max(0, state.cursor - 1) }); return; }
-    if (key.rightArrow) { actions.setProviderDialog({ ...state, cursor: Math.min(state.value.length, state.cursor + 1) }); return; }
+    if (key.leftArrow) {
+      actions.setProviderDialog({ ...state, cursor: Math.max(0, state.cursor - 1) });
+      return;
+    }
+    if (key.rightArrow) {
+      actions.setProviderDialog({
+        ...state,
+        cursor: Math.min(state.value.length, state.cursor + 1),
+      });
+      return;
+    }
     if (key.backspace) {
       if (state.cursor <= 0) return;
       const next = `${state.value.slice(0, state.cursor - 1)}${state.value.slice(state.cursor)}`;
@@ -4553,16 +4624,19 @@ async function handleProviderDialogInput(
     if (key.return) {
       const apiKey = state.value.trim() || null;
       await updateWebSearchSettings({ providerConfig: { id: state.provider.id, apiKey } });
-      actions.appendEntries([{
-        id: createEntryId(),
-        kind: 'event',
-        tone: 'success',
-        text: apiKey
-          ? `system> API key saved for ${state.provider.label}`
-          : `system> API key cleared for ${state.provider.label}`,
-      }]);
+      actions.appendEntries([
+        {
+          id: createEntryId(),
+          kind: 'event',
+          tone: 'success',
+          text: apiKey
+            ? `system> API key saved for ${state.provider.label}`
+            : `system> API key cleared for ${state.provider.label}`,
+        },
+      ]);
       const settings = (await getWebSearchSettings()) as WebSearchSettingsPayload;
-      const fresh = settings.availableProviders.find((x) => x.id === state.provider.id) ?? state.provider;
+      const fresh =
+        settings.availableProviders.find((x) => x.id === state.provider.id) ?? state.provider;
       actions.setProviderDialog({ kind: 'web-provider-menu', provider: fresh, selectedIndex: 0 });
       return;
     }
@@ -4580,8 +4654,17 @@ async function handleProviderDialogInput(
       actions.setProviderDialog({ ...state, value: val, cursor: val.length });
       return;
     }
-    if (key.leftArrow) { actions.setProviderDialog({ ...state, cursor: Math.max(0, state.cursor - 1) }); return; }
-    if (key.rightArrow) { actions.setProviderDialog({ ...state, cursor: Math.min(state.value.length, state.cursor + 1) }); return; }
+    if (key.leftArrow) {
+      actions.setProviderDialog({ ...state, cursor: Math.max(0, state.cursor - 1) });
+      return;
+    }
+    if (key.rightArrow) {
+      actions.setProviderDialog({
+        ...state,
+        cursor: Math.min(state.value.length, state.cursor + 1),
+      });
+      return;
+    }
     if (key.backspace) {
       if (state.cursor <= 0) return;
       const next = `${state.value.slice(0, state.cursor - 1)}${state.value.slice(state.cursor)}`;
@@ -4591,16 +4674,19 @@ async function handleProviderDialogInput(
     if (key.return) {
       const baseUrl = state.value.trim() || null;
       await updateWebSearchSettings({ providerConfig: { id: state.provider.id, baseUrl } });
-      actions.appendEntries([{
-        id: createEntryId(),
-        kind: 'event',
-        tone: 'success',
-        text: baseUrl
-          ? `system> base URL saved for ${state.provider.label}: ${baseUrl}`
-          : `system> base URL reset to default for ${state.provider.label}`,
-      }]);
+      actions.appendEntries([
+        {
+          id: createEntryId(),
+          kind: 'event',
+          tone: 'success',
+          text: baseUrl
+            ? `system> base URL saved for ${state.provider.label}: ${baseUrl}`
+            : `system> base URL reset to default for ${state.provider.label}`,
+        },
+      ]);
       const settings = (await getWebSearchSettings()) as WebSearchSettingsPayload;
-      const fresh = settings.availableProviders.find((x) => x.id === state.provider.id) ?? state.provider;
+      const fresh =
+        settings.availableProviders.find((x) => x.id === state.provider.id) ?? state.provider;
       actions.setProviderDialog({ kind: 'web-provider-menu', provider: fresh, selectedIndex: 0 });
       return;
     }
@@ -5363,21 +5449,25 @@ async function handleProviderDialogInput(
       try {
         await deleteProviderProfile(profile.id);
         actions.setProviderDialog(null);
-        actions.appendEntries([{
-          id: createEntryId(),
-          kind: 'event',
-          tone: 'success',
-          text: `system> provider removed: ${profile.label}`,
-        }]);
+        actions.appendEntries([
+          {
+            id: createEntryId(),
+            kind: 'event',
+            tone: 'success',
+            text: `system> provider removed: ${profile.label}`,
+          },
+        ]);
         await actions.refreshStatus();
       } catch (err) {
         actions.setProviderDialog(null);
-        actions.appendEntries([{
-          id: createEntryId(),
-          kind: 'event',
-          tone: 'danger',
-          text: `system> failed to remove provider: ${err instanceof Error ? err.message : String(err)}`,
-        }]);
+        actions.appendEntries([
+          {
+            id: createEntryId(),
+            kind: 'event',
+            tone: 'danger',
+            text: `system> failed to remove provider: ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ]);
       }
       return;
     }
@@ -5823,7 +5913,7 @@ async function handleProviderDialogInput(
           ? `reasoning_effort: ${selected.id}`
           : state.thinkProfile === 'mistral-adjustable'
             ? `reasoning_effort: ${selected.id}`
-            : `Anthropic budget_tokens mapped`;
+            : 'Anthropic budget_tokens mapped';
       actions.appendEntries([
         {
           id: createEntryId(),

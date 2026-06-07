@@ -23,7 +23,10 @@ export const BUILTIN_SLASH_COMMANDS: SlashCommandHelp[] = [
   { name: '/plan', summary: 'Switch to plan mode.' },
   { name: '/full', summary: 'Switch to full context mode (no compression, high budget).' },
   { name: '/git', summary: 'Toggle git tools on/off for this session.' },
-  { name: '/web', summary: 'Web search settings: toggle mode (off/cached/live) and switch provider.' },
+  {
+    name: '/web',
+    summary: 'Web search settings: toggle mode (off/cached/live) and switch provider.',
+  },
   { name: '/status', summary: 'Ping daemon and show queue health.' },
   { name: '/init', summary: 'Scaffold AGENTS.md and local checks.' },
   { name: '/compact', summary: 'Summarize older session history and shrink context.' },

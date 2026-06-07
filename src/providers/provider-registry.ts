@@ -128,7 +128,8 @@ const OPTIONAL_PROVIDERS: readonly OptionalProviderDescriptor[] = [
       defaultUrl: 'https://opencode.ai/zen/v1',
       needsKey: false,
       keyOptional: true,
-      keyHint: 'API key from opencode.ai/zen. Free models (big-pickle, minimax-m2.5-free, gpt-5-nano) work without a key.',
+      keyHint:
+        'API key from opencode.ai/zen. Free models (big-pickle, minimax-m2.5-free, gpt-5-nano) work without a key.',
       cloud: true,
       aliases: ['opencode', 'opencode.ai'],
     },

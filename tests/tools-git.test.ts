@@ -117,7 +117,10 @@ describe.skipIf(!gitAvailable)('git tools', () => {
     // Set up workspace: init, config, remote, initial commit
     execFileSync(git, ['init'], { cwd: workspace, stdio: 'ignore' });
     execFileSync(git, ['config', 'user.name', 'Umbra Test'], { cwd: workspace, stdio: 'ignore' });
-    execFileSync(git, ['config', 'user.email', 'umbra@example.com'], { cwd: workspace, stdio: 'ignore' });
+    execFileSync(git, ['config', 'user.email', 'umbra@example.com'], {
+      cwd: workspace,
+      stdio: 'ignore',
+    });
     execFileSync(git, ['remote', 'add', 'origin', bare], { cwd: workspace, stdio: 'ignore' });
 
     await fs.writeFile(path.join(workspace, 'hello.txt'), 'hello\n', 'utf8');

@@ -9,7 +9,7 @@ export type ContextCommandInput = {
 export const runContextCommand: CliCommandHandler = async (input: unknown) => {
   const { directory } = input as ContextCommandInput;
   const targetDir = directory || process.cwd();
-  
+
   console.log(`\n🔍 Building Repo Map for: ${path.resolve(targetDir)}\n`);
 
   try {
@@ -17,9 +17,9 @@ export const runContextCommand: CliCommandHandler = async (input: unknown) => {
     const summary = summarizeRepoMap(repoMap);
 
     console.log(summary.markdown);
-    
+
     console.log('\n=======================================');
-    console.log(`📊 Statistics:`);
+    console.log('📊 Statistics:');
     console.log(`- Files in context: ${summary.repoFiles}`);
     console.log(`- Symbols extracted: ${summary.repoSymbols}`);
     console.log(`- Languages: ${summary.languages.join(', ')}`);

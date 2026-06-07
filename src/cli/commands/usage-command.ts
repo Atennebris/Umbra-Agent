@@ -7,10 +7,10 @@ export const runUsageCommand: CliCommandHandler = async (input) => {
 
   if (sub === 'last' || sub === undefined || sub === '') {
     // Default: show last request + session totals
-    const [stats, last] = await Promise.all([
+    const [stats, last] = (await Promise.all([
       getUsageStats().catch(() => null),
       getLastUsage().catch(() => null),
-    ]) as [
+    ])) as [
       import('../../memory/usage-log.js').AggregatedStats | null,
       import('../../memory/usage-log.js').UsageRecord | null,
     ];
@@ -30,7 +30,9 @@ export const runUsageCommand: CliCommandHandler = async (input) => {
       }
       console.log(`  Total     : ${last.totalTokens.toLocaleString()} tokens`);
       if (last.contextPercent != null) {
-        console.log(`  Ctx used  : ${last.contextPercent.toFixed(1)}%${last.contextLimit ? ` of ${last.contextLimit.toLocaleString()}` : ''}`);
+        console.log(
+          `  Ctx used  : ${last.contextPercent.toFixed(1)}%${last.contextLimit ? ` of ${last.contextLimit.toLocaleString()}` : ''}`,
+        );
       }
       if (last.costEstimate != null) {
         console.log(`  Cost      : $${last.costEstimate.toFixed(6)}`);

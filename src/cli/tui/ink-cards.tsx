@@ -151,13 +151,17 @@ export function InkStatusLine(props: {
           {(req.reasoningTokens ?? 0) > 0 ? (
             <>
               {DOT}
-              <Text color={umbraTheme.muted}>{`~${(req.reasoningTokens ?? 0).toLocaleString()}`}</Text>
+              <Text
+                color={umbraTheme.muted}
+              >{`~${(req.reasoningTokens ?? 0).toLocaleString()}`}</Text>
             </>
           ) : null}
           {(req.cacheReadTokens ?? 0) > 0 ? (
             <>
               {DOT}
-              <Text color={umbraTheme.code}>{`cache:${(req.cacheReadTokens ?? 0).toLocaleString()}`}</Text>
+              <Text
+                color={umbraTheme.code}
+              >{`cache:${(req.cacheReadTokens ?? 0).toLocaleString()}`}</Text>
             </>
           ) : null}
           {req.contextPercent != null ? (
@@ -177,7 +181,9 @@ export function InkStatusLine(props: {
           {req.source === 'estimated' ? (
             <>
               {DOT}
-              <Text color={umbraTheme.muted} dimColor>{'~est'}</Text>
+              <Text color={umbraTheme.muted} dimColor>
+                {'~est'}
+              </Text>
             </>
           ) : null}
         </Box>
@@ -264,7 +270,6 @@ export function InkMetricsPanel(props: {
     </Box>
   );
 }
-
 
 export function InkSlashOverlay(props: {
   commands: SlashCommandHelp[];

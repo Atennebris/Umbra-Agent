@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySplitTurn, SPLIT_TURN_TAIL_SIZE } from '../src/context/split-turn.js';
+import { SPLIT_TURN_TAIL_SIZE, applySplitTurn } from '../src/context/split-turn.js';
 import type { ProviderChatMessage } from '../src/providers/index.js';
 
 function makePair(toolName: string, resultText: string, idx: number): ProviderChatMessage[] {
@@ -100,9 +100,7 @@ describe('applySplitTurn', () => {
     const result = applySplitTurn(messages, 2000);
     expect(result.splitApplied).toBe(true);
 
-    const tailToolIds = result.messages
-      .filter((m) => m.role === 'tool')
-      .map((m) => m.toolCallId);
+    const tailToolIds = result.messages.filter((m) => m.role === 'tool').map((m) => m.toolCallId);
 
     expect(tailToolIds).toEqual(['tc-4', 'tc-5', 'tc-6']);
   });
@@ -125,8 +123,8 @@ describe('applySplitTurn', () => {
       (m) => m.role === 'user' && typeof m.content === 'string' && m.content.includes('compressed'),
     );
     expect(summaryMsg).toBeDefined();
-    expect(summaryMsg!.content).toContain('search.rg');
-    expect(summaryMsg!.content).toContain('In-Turn Prefix');
+    expect(summaryMsg?.content).toContain('search.rg');
+    expect(summaryMsg?.content).toContain('In-Turn Prefix');
   });
 
   it('tail context does not get corrupted when context is split', () => {

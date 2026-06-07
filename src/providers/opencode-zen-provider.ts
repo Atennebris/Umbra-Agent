@@ -18,7 +18,12 @@ import type {
   ProviderModelPayload,
   ProviderProfile,
 } from './profile-types.js';
-import { buildZenClientFetcher, makeZenCompactId, type FetchLike, type ProviderClient } from './provider-client.js';
+import {
+  type FetchLike,
+  type ProviderClient,
+  buildZenClientFetcher,
+  makeZenCompactId,
+} from './provider-client.js';
 import type {
   ProviderCompleteRequest,
   ProviderCompleteResponse,
@@ -261,7 +266,11 @@ function restoreToolNames(
 function toChatTool(t: ToolDef) {
   return {
     type: 'function',
-    function: { name: sanitizeToolName(t.name), description: t.description ?? '', parameters: t.inputSchema },
+    function: {
+      name: sanitizeToolName(t.name),
+      description: t.description ?? '',
+      parameters: t.inputSchema,
+    },
   };
 }
 
@@ -275,7 +284,11 @@ function toResponsesTool(t: ToolDef) {
 }
 
 function toAnthropicTool(t: ToolDef) {
-  return { name: sanitizeToolName(t.name), description: t.description ?? '', input_schema: t.inputSchema };
+  return {
+    name: sanitizeToolName(t.name),
+    description: t.description ?? '',
+    input_schema: t.inputSchema,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -553,9 +566,7 @@ export class OpencodeZenProviderClient implements ProviderClient {
             id,
             name: ZEN_FREE_DISPLAY[id] ?? rawName,
             contextWindow:
-              typeof e.context_window === 'number'
-                ? e.context_window
-                : ZEN_KNOWN_CTX[id] ?? null,
+              typeof e.context_window === 'number' ? e.context_window : (ZEN_KNOWN_CTX[id] ?? null),
           };
         })
         .filter((m) => m.id.length > 0);
@@ -740,9 +751,14 @@ export class OpencodeZenProviderClient implements ProviderClient {
       ...(u
         ? {
             usage: {
-              inputTokens: typeof u['prompt_tokens'] === 'number' ? (u['prompt_tokens'] as number) : undefined,
-              outputTokens: typeof u['completion_tokens'] === 'number' ? (u['completion_tokens'] as number) : undefined,
-              totalTokens: typeof u['total_tokens'] === 'number' ? (u['total_tokens'] as number) : undefined,
+              inputTokens:
+                typeof u.prompt_tokens === 'number' ? (u.prompt_tokens as number) : undefined,
+              outputTokens:
+                typeof u.completion_tokens === 'number'
+                  ? (u.completion_tokens as number)
+                  : undefined,
+              totalTokens:
+                typeof u.total_tokens === 'number' ? (u.total_tokens as number) : undefined,
             },
           }
         : {}),

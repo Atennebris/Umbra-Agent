@@ -1,5 +1,5 @@
-import * as readline from 'node:readline';
 import { spawn } from 'node:child_process';
+import * as readline from 'node:readline';
 import type { CliCommandHandler } from '../command-types.js';
 import {
   createProviderProfile,
@@ -10,13 +10,22 @@ import {
   testProviderProfile,
   updateProviderProfile,
 } from '../http-client.js';
-import { loginOpenAICodex } from '../oauth/openai-codex-oauth.js';
 import { saveOAuthToken } from '../oauth/oauth-storage.js';
+import { loginOpenAICodex } from '../oauth/openai-codex-oauth.js';
 import { renderKeyValueCard } from '../tui/frame.js';
 
 type ProvidersCommandInput =
   | { action: 'list'; json: boolean }
-  | { action: 'add'; type: string; label: string; baseUrl?: string; apiKey?: string; model?: string; makeDefault: boolean; headers: string[] }
+  | {
+      action: 'add';
+      type: string;
+      label: string;
+      baseUrl?: string;
+      apiKey?: string;
+      model?: string;
+      makeDefault: boolean;
+      headers: string[];
+    }
   | { action: 'use'; id: string; model?: string }
   | { action: 'models'; id?: string }
   | { action: 'catalog'; json: boolean }
@@ -31,24 +40,39 @@ export const runProvidersCommand: CliCommandHandler = async (input) => {
   switch (command.action) {
     case 'list': {
       const payload = (await listProviderProfiles()) as {
-        profiles: Array<{ id: string; label: string; type: string; status: string; model: string | null; reason: string | null }>;
+        profiles: Array<{
+          id: string;
+          label: string;
+          type: string;
+          status: string;
+          model: string | null;
+          reason: string | null;
+        }>;
         defaultProfileId: string | null;
         activeProfileId: string | null;
       };
 
-      if (command.json) { console.log(JSON.stringify(payload, null, 2)); return; }
-      if (payload.profiles.length === 0) { console.log('No provider profiles configured.'); return; }
+      if (command.json) {
+        console.log(JSON.stringify(payload, null, 2));
+        return;
+      }
+      if (payload.profiles.length === 0) {
+        console.log('No provider profiles configured.');
+        return;
+      }
 
       for (const profile of payload.profiles) {
-        console.log(renderKeyValueCard(profile.label, [
-          ['ID', profile.id],
-          ['Type', profile.type],
-          ['Status', profile.status],
-          ['Model', profile.model ?? 'none'],
-          ['Default', payload.defaultProfileId === profile.id ? 'yes' : 'no'],
-          ['Active', payload.activeProfileId === profile.id ? 'yes' : 'no'],
-          ['Reason', profile.reason ?? 'ok'],
-        ]));
+        console.log(
+          renderKeyValueCard(profile.label, [
+            ['ID', profile.id],
+            ['Type', profile.type],
+            ['Status', profile.status],
+            ['Model', profile.model ?? 'none'],
+            ['Default', payload.defaultProfileId === profile.id ? 'yes' : 'no'],
+            ['Active', payload.activeProfileId === profile.id ? 'yes' : 'no'],
+            ['Reason', profile.reason ?? 'ok'],
+          ]),
+        );
       }
       return;
     }
@@ -85,46 +109,65 @@ export const runProvidersCommand: CliCommandHandler = async (input) => {
       const payload = (await listProviderModels(providerId)) as {
         models: Array<{ id: string; name: string; contextWindow: number | null; tags?: string[] }>;
       };
-      if (payload.models.length === 0) { console.log('No models reported by the provider.'); return; }
+      if (payload.models.length === 0) {
+        console.log('No models reported by the provider.');
+        return;
+      }
       for (const model of payload.models) {
-        console.log(renderKeyValueCard(model.name, [
-          ['ID', model.id],
-          ['Context', model.contextWindow === null ? 'unknown' : String(model.contextWindow)],
-          ['Tags', model.tags?.join(', ') || 'none'],
-        ]));
+        console.log(
+          renderKeyValueCard(model.name, [
+            ['ID', model.id],
+            ['Context', model.contextWindow === null ? 'unknown' : String(model.contextWindow)],
+            ['Tags', model.tags?.join(', ') || 'none'],
+          ]),
+        );
       }
       return;
     }
 
     case 'catalog': {
       const response = (await getProviderModelCatalog()) as {
-        catalog?: Record<string, { id: string; provider: string; name?: string; limit?: { context?: number } }>;
+        catalog?: Record<
+          string,
+          { id: string; provider: string; name?: string; limit?: { context?: number } }
+        >;
       };
       const catalog = response.catalog || {};
-      const grouped = Object.values(catalog).reduce<Record<string, Array<{ id: string; contextWindow: number | null }>>>((acc, model) => {
+      const grouped = Object.values(catalog).reduce<
+        Record<string, Array<{ id: string; contextWindow: number | null }>>
+      >((acc, model) => {
         const provider = model.provider || 'unknown';
         const entries = acc[provider] ?? [];
-        entries.push({ id: model.id, contextWindow: typeof model.limit?.context === 'number' ? model.limit.context : null });
+        entries.push({
+          id: model.id,
+          contextWindow: typeof model.limit?.context === 'number' ? model.limit.context : null,
+        });
         acc[provider] = entries;
         return acc;
       }, {});
 
-      if (command.json) { console.log(JSON.stringify(grouped, null, 2)); return; }
+      if (command.json) {
+        console.log(JSON.stringify(grouped, null, 2));
+        return;
+      }
       console.log('--- Model Catalog (from models.dev) ---');
       for (const [provider, models] of Object.entries(grouped)) {
         if (models.length === 0) continue;
         console.log(`\n[${provider}]`);
-        for (const model of models) console.log(`  - ${model.id} (${model.contextWindow ?? '?'} tokens)`);
+        for (const model of models)
+          console.log(`  - ${model.id} (${model.contextWindow ?? '?'} tokens)`);
       }
       return;
     }
 
     case 'test': {
       const payload = (await testProviderProfile(command.id)) as { ok: boolean; message: string };
-      console.log(renderKeyValueCard('Provider Test', [
-        ['OK', payload.ok ? 'yes' : 'no'],
-        ['Message', payload.message],
-      ]));
+      console.log(
+        renderKeyValueCard('Provider Test', [
+          ['OK', payload.ok ? 'yes' : 'no'],
+          ['Message', payload.message],
+        ]),
+      );
       return;
     }
 
@@ -151,16 +194,30 @@ export const runProvidersCommand: CliCommandHandler = async (input) => {
 // ---------------------------------------------------------------------------
 
 const CONNECT_PROVIDERS = [
-  { id: 'openai-codex', label: 'ChatGPT Plus/Pro', hint: 'Uses your $20/$200/mo subscription via OAuth' },
-  { id: 'opencode-zen', label: 'OpenCode Zen', hint: 'Free models included; API key unlocks paid models' },
+  {
+    id: 'openai-codex',
+    label: 'ChatGPT Plus/Pro',
+    hint: 'Uses your $20/$200/mo subscription via OAuth',
+  },
+  {
+    id: 'opencode-zen',
+    label: 'OpenCode Zen',
+    hint: 'Free models included; API key unlocks paid models',
+  },
 ] as const;
 
 async function runConnectFlow(providerType?: string): Promise<void> {
   let selectedProvider = providerType;
 
   if (!selectedProvider) {
-    const idx = await pickFromList('Connect provider:', CONNECT_PROVIDERS.map((p) => ({ label: p.label, hint: p.hint })));
-    if (idx === null) { console.log('Cancelled.'); return; }
+    const idx = await pickFromList(
+      'Connect provider:',
+      CONNECT_PROVIDERS.map((p) => ({ label: p.label, hint: p.hint })),
+    );
+    if (idx === null) {
+      console.log('Cancelled.');
+      return;
+    }
     selectedProvider = CONNECT_PROVIDERS[idx]?.id;
   }
 
@@ -256,7 +313,10 @@ const MENU_ITEMS = [
 async function runInteractiveMenu(): Promise<void> {
   console.log('');
   const idx = await pickFromList('  Providers', MENU_ITEMS);
-  if (idx === null) { console.log('  Cancelled.'); return; }
+  if (idx === null) {
+    console.log('  Cancelled.');
+    return;
+  }
 
   const action = MENU_ITEMS[idx]?.label;
   console.log('');
@@ -325,11 +385,17 @@ async function runInteractiveAdd(): Promise<void> {
   ];
 
   const typeIdx = await pickFromList('  Provider type:', PROVIDER_TYPES);
-  if (typeIdx === null) { console.log('  Cancelled.'); return; }
+  if (typeIdx === null) {
+    console.log('  Cancelled.');
+    return;
+  }
   const type = PROVIDER_TYPES[typeIdx]?.label ?? 'openai';
 
   const label = await promptText('  Label (e.g. "My OpenAI"): ');
-  if (!label.trim()) { console.log('  Cancelled.'); return; }
+  if (!label.trim()) {
+    console.log('  Cancelled.');
+    return;
+  }
 
   const apiKey = await promptText('  API key: ');
   const model = await promptText('  Default model (leave blank to skip): ');
@@ -365,7 +431,10 @@ async function pickProfile(title: string): Promise<string | null> {
   }));
 
   const idx = await pickFromList(`  ${title}`, items);
-  if (idx === null) { console.log('  Cancelled.'); return null; }
+  if (idx === null) {
+    console.log('  Cancelled.');
+    return null;
+  }
   return payload.profiles[idx]?.id ?? null;
 }
 
@@ -466,7 +535,9 @@ async function resolveActiveProviderId(): Promise<string | null> {
 
 async function runOpencodeZenConnect(): Promise<void> {
   console.log('\n  OpenCode Zen\n');
-  console.log('  Free models (big-pickle, minimax-m2.5-free, gpt-5-nano, etc.) work without a key.');
+  console.log(
+    '  Free models (big-pickle, minimax-m2.5-free, gpt-5-nano, etc.) work without a key.',
+  );
   console.log('  For paid models, get an API key at: https://opencode.ai/zen\n');
 
   const useKey = await promptText('  Do you have an API key? (y/N): ');

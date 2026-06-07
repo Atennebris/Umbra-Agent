@@ -1,10 +1,10 @@
 ---
-import Layout from '../layouts/Layout.astro'
-import SessionList from '../components/SessionList.astro'
-const title = 'Umbra Dashboard'
-const sessions = await fetch('/api/sessions').then(r => r.json())
+import SessionList from '../components/SessionList.astro';
+import Layout from '../layouts/Layout.astro';
+const title = 'Umbra Dashboard';
+const sessions = await fetch('/api/sessions').then((r) => r.json());
 function formatDate(date: Date) {
-  return date.toISOString()
+  return date.toISOString();
 }
 ---
 

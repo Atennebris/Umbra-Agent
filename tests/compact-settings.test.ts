@@ -22,7 +22,7 @@ afterEach(() => {
   if (origUmbraHome !== undefined) {
     process.env.UMBRA_HOME = origUmbraHome;
   } else {
-    delete process.env.UMBRA_HOME;
+    process.env.UMBRA_HOME = undefined;
   }
   fs.rmSync(tempHome, { recursive: true, force: true });
 });
@@ -71,7 +71,8 @@ describe('/compact settings round-trip', () => {
   });
 
   it('preserves other runtime prefs when compact settings are changed', async () => {
-    const { setCompactSettings, setDefaultRuntimeMode, readRuntimePreferences } = await freshPrefs();
+    const { setCompactSettings, setDefaultRuntimeMode, readRuntimePreferences } =
+      await freshPrefs();
     setDefaultRuntimeMode('full');
     setCompactSettings('p1', 'm1');
     const prefs = readRuntimePreferences();

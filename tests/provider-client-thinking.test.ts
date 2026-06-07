@@ -14,13 +14,15 @@ vi.mock('../src/debug/runtime-debug.js', () => ({ writeDebugEvent: vi.fn() }));
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function makeProfile(overrides: Partial<{
-  id: string;
-  type: string;
-  model: string;
-  baseUrl: string;
-  apiKey: string;
-}> = {}) {
+function makeProfile(
+  overrides: Partial<{
+    id: string;
+    type: string;
+    model: string;
+    baseUrl: string;
+    apiKey: string;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 'test-profile',
     type: overrides.type ?? 'openai-compatible',
@@ -76,45 +78,93 @@ const BASE_REQUEST: ProviderCompleteRequest = {
 describe('OpenAI-compatible — reasoning_effort (o-series)', () => {
   it('sends reasoning_effort for o3-mini with thinkBudget=high', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'o3-mini' }), 'openai-compatible', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'o3-mini', thinkBudget: 'high' } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      makeProfile({ model: 'o3-mini' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'o3-mini',
+      thinkBudget: 'high',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     const body = captured[0]?.body;
     expect(body?.reasoning_effort).toBe('high');
   });
 
   it('maps max → high for o-series', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'o4-mini' }), 'openai-compatible', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'o4-mini', thinkBudget: 'max' } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      makeProfile({ model: 'o4-mini' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'o4-mini',
+      thinkBudget: 'max',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.reasoning_effort).toBe('high');
   });
 
   it('sends reasoning_effort for numeric budget on o1', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'o1' }), 'openai-compatible', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      makeProfile({ model: 'o1' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
     // 16000 tokens → effortFromBudget → 'high'
-    await client.complete({ ...BASE_REQUEST, model: 'o1', thinkBudget: 16000 } as ProviderCompleteRequest & { thinkBudget: unknown });
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'o1',
+      thinkBudget: 16000,
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.reasoning_effort).toBe('high');
   });
 
   it('does NOT send reasoning_effort when thinkBudget is null', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'o3-mini' }), 'openai-compatible', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'o3-mini', thinkBudget: null } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      makeProfile({ model: 'o3-mini' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'o3-mini',
+      thinkBudget: null,
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.reasoning_effort).toBeUndefined();
   });
 
   it('does NOT send reasoning_effort for gpt-4o (not o-series)', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'gpt-4o' }), 'openai-compatible', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'gpt-4o', thinkBudget: 'high' } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      makeProfile({ model: 'gpt-4o' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'gpt-4o',
+      thinkBudget: 'high',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.reasoning_effort).toBeUndefined();
   });
 
   it('does NOT send reasoning_effort for deepseek-chat (blocklisted)', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'deepseek-chat' }), 'openai-compatible', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'deepseek-chat', thinkBudget: 'high' } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      makeProfile({ model: 'deepseek-chat' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'deepseek-chat',
+      thinkBudget: 'high',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.reasoning_effort).toBeUndefined();
   });
 });
@@ -153,8 +203,16 @@ describe('Anthropic — thinking block', () => {
 
   it('sends thinking block for budget level high', async () => {
     const { captured, mockFetch } = mockAnthropicFetch();
-    const client = createProviderClient(anthropicProfile as never, 'anthropic', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'claude-3-7-sonnet-20250219', thinkBudget: 'high' } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      anthropicProfile as never,
+      'anthropic',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'claude-3-7-sonnet-20250219',
+      thinkBudget: 'high',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     const body = captured[0]?.body;
     expect(body?.thinking).toEqual({ type: 'enabled', budget_tokens: 16000 });
     // temperature must NOT be sent when thinking is enabled
@@ -163,23 +221,47 @@ describe('Anthropic — thinking block', () => {
 
   it('sends thinking block for numeric budget', async () => {
     const { captured, mockFetch } = mockAnthropicFetch();
-    const client = createProviderClient(anthropicProfile as never, 'anthropic', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'claude-3-7-sonnet-20250219', thinkBudget: 8000 } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      anthropicProfile as never,
+      'anthropic',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'claude-3-7-sonnet-20250219',
+      thinkBudget: 8000,
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     const body = captured[0]?.body;
     expect(body?.thinking).toEqual({ type: 'enabled', budget_tokens: 8000 });
   });
 
   it('maps max → 32000 budget tokens', async () => {
     const { captured, mockFetch } = mockAnthropicFetch();
-    const client = createProviderClient(anthropicProfile as never, 'anthropic', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'claude-3-7-sonnet-20250219', thinkBudget: 'max' } as ProviderCompleteRequest & { thinkBudget: unknown });
-    expect((captured[0]?.body?.thinking as Record<string,unknown>)?.budget_tokens).toBe(32000);
+    const client = createProviderClient(
+      anthropicProfile as never,
+      'anthropic',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'claude-3-7-sonnet-20250219',
+      thinkBudget: 'max',
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
+    expect((captured[0]?.body?.thinking as Record<string, unknown>)?.budget_tokens).toBe(32000);
   });
 
   it('does NOT send thinking block when thinkBudget is null', async () => {
     const { captured, mockFetch } = mockAnthropicFetch();
-    const client = createProviderClient(anthropicProfile as never, 'anthropic', mockFetch as typeof fetch);
-    await client.complete({ ...BASE_REQUEST, model: 'claude-3-5-sonnet-20241022', thinkBudget: null } as ProviderCompleteRequest & { thinkBudget: unknown });
+    const client = createProviderClient(
+      anthropicProfile as never,
+      'anthropic',
+      mockFetch as typeof fetch,
+    );
+    await client.complete({
+      ...BASE_REQUEST,
+      model: 'claude-3-5-sonnet-20241022',
+      thinkBudget: null,
+    } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(captured[0]?.body?.thinking).toBeUndefined();
   });
 });
@@ -200,7 +282,11 @@ describe('Mistral — magistral (always-on reasoning, no parameter needed)', () 
 
   it('does NOT send reasoning_effort for magistral-medium — reasoning is built-in', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'magistral-medium-latest',
@@ -214,7 +300,11 @@ describe('Mistral — magistral (always-on reasoning, no parameter needed)', () 
 
   it('does NOT send reasoning_effort for magistral-small regardless of thinkBudget', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'magistral-small-2509',
@@ -226,7 +316,11 @@ describe('Mistral — magistral (always-on reasoning, no parameter needed)', () 
 
   it('does NOT send reasoning_effort for magistral even when thinkBudget=null', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'magistral-medium-latest',
@@ -237,7 +331,11 @@ describe('Mistral — magistral (always-on reasoning, no parameter needed)', () 
 
   it('does NOT send reasoning_effort for non-thinking Mistral models (mistral-large)', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'mistral-large-latest',
@@ -259,7 +357,11 @@ describe('Mistral — adjustable reasoning (mistral-small / mistral-medium)', ()
 
   it('sends reasoning_effort=high for mistral-small with thinkBudget=high', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'mistral-small-latest',
@@ -270,7 +372,11 @@ describe('Mistral — adjustable reasoning (mistral-small / mistral-medium)', ()
 
   it('sends reasoning_effort=medium for mistral-medium with thinkBudget=medium', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'mistral-medium-latest',
@@ -281,7 +387,11 @@ describe('Mistral — adjustable reasoning (mistral-small / mistral-medium)', ()
 
   it('maps max → high for adjustable Mistral reasoning', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'mistral-small-latest',
@@ -292,7 +402,11 @@ describe('Mistral — adjustable reasoning (mistral-small / mistral-medium)', ()
 
   it('does NOT send reasoning_effort for mistral-small when thinkBudget=null', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'mistral-small-latest',
@@ -333,14 +447,20 @@ describe('Mistral — magistral array content response parsing', () => {
       ],
     };
     const { mockFetch } = mockFetchCapture(responseBody);
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     const result = await client.complete({
       ...BASE_REQUEST,
       model: 'magistral-medium-latest',
       thinkBudget: 'high',
     } as ProviderCompleteRequest & { thinkBudget: unknown });
     expect(result.outputText).toBe('The answer is 42.');
-    expect((result as Record<string, unknown>).reasoningContent).toBe('Let me think about this carefully.');
+    expect((result as Record<string, unknown>).reasoningContent).toBe(
+      'Let me think about this carefully.',
+    );
   });
 
   it('handles string content (non-thinking magistral response) normally', async () => {
@@ -348,7 +468,11 @@ describe('Mistral — magistral array content response parsing', () => {
       choices: [{ finish_reason: 'stop', message: { content: 'plain text', tool_calls: null } }],
     };
     const { mockFetch } = mockFetchCapture(responseBody);
-    const client = createProviderClient(mistralProfile as never, 'mistral', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      mistralProfile as never,
+      'mistral',
+      mockFetch as typeof fetch,
+    );
     const result = await client.complete({
       ...BASE_REQUEST,
       model: 'magistral-medium-latest',
@@ -365,7 +489,11 @@ describe('Mistral — magistral array content response parsing', () => {
 describe('Unknown models — no reasoning params', () => {
   it('does not send reasoning_effort for an unknown model with thinkBudget set', async () => {
     const { captured, mockFetch } = mockFetchCapture();
-    const client = createProviderClient(makeProfile({ model: 'some-custom-llm-v1' }), 'openai-compatible', mockFetch as typeof fetch);
+    const client = createProviderClient(
+      makeProfile({ model: 'some-custom-llm-v1' }),
+      'openai-compatible',
+      mockFetch as typeof fetch,
+    );
     await client.complete({
       ...BASE_REQUEST,
       model: 'some-custom-llm-v1',

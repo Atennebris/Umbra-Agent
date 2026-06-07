@@ -27,7 +27,6 @@ import {
   webSearchSettingsUpdateSchema,
 } from '../tools/index.js';
 import { AgentRuntime } from './agent-runtime.js';
-import { getPermissionManager } from './permissions.js';
 import type {
   DaemonStatus,
   MemorySettingsPayload,
@@ -42,8 +41,9 @@ import type {
   ThreadSettingsPayload,
 } from './contracts.js';
 import { resolveRunModeContract } from './mode-contracts.js';
-import { getCompactSettings, getReviewSettings } from './runtime-preferences.js';
+import { getPermissionManager } from './permissions.js';
 import { RunRegistry } from './run-registry.js';
+import { getCompactSettings, getReviewSettings } from './runtime-preferences.js';
 import { TaskQueue } from './task-queue.js';
 
 type GatewayOptions = {
@@ -917,7 +917,12 @@ export class HttpGateway {
             try {
               const events = this.#memory.readSessionEvents(sessionId);
               const transcript = events
-                .filter((e) => e.type === 'user_message' || e.type === 'assistant_message' || e.type === 'tool_call_finished')
+                .filter(
+                  (e) =>
+                    e.type === 'user_message' ||
+                    e.type === 'assistant_message' ||
+                    e.type === 'tool_call_finished',
+                )
                 .map((e) => {
                   const p = e.payload as Record<string, unknown>;
                   return `[${e.type}] ${JSON.stringify(p).slice(0, 400)}`;
@@ -1101,7 +1106,8 @@ export class HttpGateway {
       }
 
       const reviewProjectPath = requestBody.projectPath;
-      const reviewTarget = typeof requestBody.target === 'string' ? requestBody.target : 'uncommitted';
+      const reviewTarget =
+        typeof requestBody.target === 'string' ? requestBody.target : 'uncommitted';
 
       try {
         const diff = getGitDiffForReview(reviewProjectPath, reviewTarget);
@@ -1117,9 +1123,8 @@ export class HttpGateway {
         }
 
         const reviewSettings = getReviewSettings();
-        const profileId = reviewSettings.provider
-          ?? this.#providers.listProfiles?.()?.activeProfileId
-          ?? null;
+        const profileId =
+          reviewSettings.provider ?? this.#providers.listProfiles?.()?.activeProfileId ?? null;
 
         if (!profileId) {
           this.#sendJson(response, 400, {
@@ -1811,12 +1816,22 @@ function parseRunTaskPayload(
     value.thinkBudget !== undefined &&
     value.thinkBudget !== null &&
     !(typeof value.thinkBudget === 'string' && VALID_THINK_BUDGETS.has(value.thinkBudget)) &&
-    !(typeof value.thinkBudget === 'number' && Number.isInteger(value.thinkBudget) && value.thinkBudget > 0)
+    !(
+      typeof value.thinkBudget === 'number' &&
+      Number.isInteger(value.thinkBudget) &&
+      value.thinkBudget > 0
+    )
   ) {
-    issues.push('Payload field "thinkBudget" must be null, a positive integer, or one of: low, medium, high, max.');
+    issues.push(
+      'Payload field "thinkBudget" must be null, a positive integer, or one of: low, medium, high, max.',
+    );
   }
 
-  if (value.goalContext !== undefined && value.goalContext !== null && typeof value.goalContext !== 'string') {
+  if (
+    value.goalContext !== undefined &&
+    value.goalContext !== null &&
+    typeof value.goalContext !== 'string'
+  ) {
     issues.push('Payload field "goalContext" must be a string or null when provided.');
   }
 
@@ -2296,7 +2311,12 @@ function emptyDefaultsPayload() {
 }
 
 function getGitDiffForReview(projectPath: string, target: string): string {
-  const opts = { cwd: projectPath, encoding: 'utf8' as const, timeout: 30_000, maxBuffer: 2 * 1024 * 1024 };
+  const opts = {
+    cwd: projectPath,
+    encoding: 'utf8' as const,
+    timeout: 30_000,
+    maxBuffer: 2 * 1024 * 1024,
+  };
   try {
     if (target === 'staged') {
       return execFileSync('git', ['diff', '--cached'], opts);

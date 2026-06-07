@@ -54,12 +54,9 @@ export function readRuntimePreferences(): RuntimePreferences {
 
     const compactProvider =
       typeof parsed.compactProvider === 'string' ? parsed.compactProvider : null;
-    const compactModel =
-      typeof parsed.compactModel === 'string' ? parsed.compactModel : null;
-    const reviewProvider =
-      typeof parsed.reviewProvider === 'string' ? parsed.reviewProvider : null;
-    const reviewModel =
-      typeof parsed.reviewModel === 'string' ? parsed.reviewModel : null;
+    const compactModel = typeof parsed.compactModel === 'string' ? parsed.compactModel : null;
+    const reviewProvider = typeof parsed.reviewProvider === 'string' ? parsed.reviewProvider : null;
+    const reviewModel = typeof parsed.reviewModel === 'string' ? parsed.reviewModel : null;
 
     const theme = typeof parsed.theme === 'string' ? parsed.theme : undefined;
 

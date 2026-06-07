@@ -25,5 +25,4 @@ describe('provider registry', () => {
     expect(getProviderSpec('lm-studio')?.value).toBe('lmstudio');
     expect(normalizeProviderType('custom')).toBe('openai_compatible');
   });
-
 });

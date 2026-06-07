@@ -126,9 +126,7 @@ function renderSessionSummary(
       '## New Progress',
       `- Goals: ${goals.slice(-2).join(' | ') || 'none'}`,
       doneItems.length > 0 ? `- Completed: ${doneItems.slice(-3).join(' | ')}` : null,
-      files.size > 0
-        ? `- Files touched: ${Array.from(files).slice(0, 8).join(' | ')}`
-        : null,
+      files.size > 0 ? `- Files touched: ${Array.from(files).slice(0, 8).join(' | ')}` : null,
       failures.length > 0 ? `- Failures: ${failures.slice(-2).join(' | ')}` : null,
       recentTail.length > 0 ? `- Preserved tail: ${recentTail.join(' | ')}` : null,
       noteSection,
@@ -141,17 +139,15 @@ function renderSessionSummary(
   return [
     '# Session Compact',
     '## Goals',
-    goals.length > 0
-      ? goals.map((g) => `- ${g.slice(0, 120)}`).join('\n')
-      : '- none',
+    goals.length > 0 ? goals.map((g) => `- ${g.slice(0, 120)}`).join('\n') : '- none',
     '## Progress',
     doneItems.length > 0 ? `- Done: ${doneItems.slice(-4).join(' | ')}` : '- Done: none',
-    files.size > 0
-      ? `- Files: ${Array.from(files).slice(0, 8).join(' | ')}`
-      : '- Files: none',
+    files.size > 0 ? `- Files: ${Array.from(files).slice(0, 8).join(' | ')}` : '- Files: none',
     failures.length > 0 ? `- Failures: ${failures.slice(-3).join(' | ')}` : null,
     '## Next Steps',
-    recentTail.length > 0 ? `- Preserved tail: ${recentTail.join(' | ')}` : '- Preserved tail: none',
+    recentTail.length > 0
+      ? `- Preserved tail: ${recentTail.join(' | ')}`
+      : '- Preserved tail: none',
     noteSection,
   ]
     .filter((line): line is string => line !== null)

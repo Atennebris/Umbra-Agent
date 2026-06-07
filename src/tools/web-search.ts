@@ -135,8 +135,14 @@ export class WebSearchService {
         providers = {
           ...providers,
           [cfgId]: {
-            apiKey: input.providerConfig.apiKey !== undefined ? input.providerConfig.apiKey : existing.apiKey,
-            baseUrl: input.providerConfig.baseUrl !== undefined ? input.providerConfig.baseUrl : existing.baseUrl,
+            apiKey:
+              input.providerConfig.apiKey !== undefined
+                ? input.providerConfig.apiKey
+                : existing.apiKey,
+            baseUrl:
+              input.providerConfig.baseUrl !== undefined
+                ? input.providerConfig.baseUrl
+                : existing.baseUrl,
           },
         };
       }

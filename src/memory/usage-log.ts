@@ -89,7 +89,13 @@ export class UsageLogger {
         .readFileSync(this.#usagePath, 'utf8')
         .split('\n')
         .filter(Boolean)
-        .map((line) => { try { return JSON.parse(line) as UsageRecord; } catch { return null; } })
+        .map((line) => {
+          try {
+            return JSON.parse(line) as UsageRecord;
+          } catch {
+            return null;
+          }
+        })
         .filter((r): r is UsageRecord => r !== null);
     } catch {
       return [];
@@ -99,7 +105,18 @@ export class UsageLogger {
   getStatsByModel(): Record<string, AggregatedStats & { avgCostPerRequest: number }> {
     const map: Record<string, AggregatedStats & { avgCostPerRequest: number }> = {};
     for (const r of this.#readAllRecords()) {
-      if (!map[r.model]) map[r.model] = { totalTokens: 0, inputTokens: 0, outputTokens: 0, reasoningTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, requests: 0, totalCost: 0, avgCostPerRequest: 0 };
+      if (!map[r.model])
+        map[r.model] = {
+          totalTokens: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          reasoningTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          requests: 0,
+          totalCost: 0,
+          avgCostPerRequest: 0,
+        };
       const s = map[r.model]!;
       s.totalTokens += r.totalTokens || 0;
       s.inputTokens += r.inputTokens || 0;
@@ -120,7 +137,18 @@ export class UsageLogger {
     const map: Record<string, AggregatedStats & { avgCostPerRequest: number }> = {};
     for (const r of this.#readAllRecords()) {
       const key = r.profileId || 'unknown';
-      if (!map[key]) map[key] = { totalTokens: 0, inputTokens: 0, outputTokens: 0, reasoningTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, requests: 0, totalCost: 0, avgCostPerRequest: 0 };
+      if (!map[key])
+        map[key] = {
+          totalTokens: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          reasoningTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          requests: 0,
+          totalCost: 0,
+          avgCostPerRequest: 0,
+        };
       const s = map[key]!;
       s.totalTokens += r.totalTokens || 0;
       s.inputTokens += r.inputTokens || 0;
@@ -141,7 +169,18 @@ export class UsageLogger {
     const map: Record<string, AggregatedStats & { avgCostPerRequest: number }> = {};
     for (const r of this.#readAllRecords()) {
       const key = r.sessionId || 'no-session';
-      if (!map[key]) map[key] = { totalTokens: 0, inputTokens: 0, outputTokens: 0, reasoningTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, requests: 0, totalCost: 0, avgCostPerRequest: 0 };
+      if (!map[key])
+        map[key] = {
+          totalTokens: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          reasoningTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          requests: 0,
+          totalCost: 0,
+          avgCostPerRequest: 0,
+        };
       const s = map[key]!;
       s.totalTokens += r.totalTokens || 0;
       s.inputTokens += r.inputTokens || 0;
@@ -164,17 +203,25 @@ export class UsageLogger {
     const total = this.getStats();
 
     const lines: string[] = [
-      `=== Usage Report ===`,
+      '=== Usage Report ===',
       `Total: ${total.requests} requests | ${total.totalTokens.toLocaleString()} tokens | $${total.totalCost.toFixed(4)}`,
       '',
       '--- By Model ---',
     ];
-    for (const [model, s] of Object.entries(byModel).sort((a, b) => b[1].totalCost - a[1].totalCost)) {
-      lines.push(`  ${model}: ${s.requests} req | ${s.totalTokens.toLocaleString()} tok | $${s.totalCost.toFixed(4)} | avg $${s.avgCostPerRequest.toFixed(4)}/req`);
+    for (const [model, s] of Object.entries(byModel).sort(
+      (a, b) => b[1].totalCost - a[1].totalCost,
+    )) {
+      lines.push(
+        `  ${model}: ${s.requests} req | ${s.totalTokens.toLocaleString()} tok | $${s.totalCost.toFixed(4)} | avg $${s.avgCostPerRequest.toFixed(4)}/req`,
+      );
     }
     lines.push('', '--- By Provider ---');
-    for (const [provider, s] of Object.entries(byProvider).sort((a, b) => b[1].totalCost - a[1].totalCost)) {
-      lines.push(`  ${provider}: ${s.requests} req | ${s.totalTokens.toLocaleString()} tok | $${s.totalCost.toFixed(4)}`);
+    for (const [provider, s] of Object.entries(byProvider).sort(
+      (a, b) => b[1].totalCost - a[1].totalCost,
+    )) {
+      lines.push(
+        `  ${provider}: ${s.requests} req | ${s.totalTokens.toLocaleString()} tok | $${s.totalCost.toFixed(4)}`,
+      );
     }
     return lines.join('\n');
   }

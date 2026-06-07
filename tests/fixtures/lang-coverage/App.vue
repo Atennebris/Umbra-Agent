@@ -11,34 +11,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import DaemonStatus from './DaemonStatus.vue'
-import SessionList from './SessionList.vue'
+import { computed, onMounted, ref } from 'vue';
+import DaemonStatus from './DaemonStatus.vue';
+import SessionList from './SessionList.vue';
 
 interface Session {
-  id: string
-  title: string
-  startedAt: Date
+  id: string;
+  title: string;
+  startedAt: Date;
 }
 
-const title = ref('Umbra CLI')
-const status = ref<'running' | 'stopped'>('stopped')
-const sessions = ref<Session[]>([])
+const title = ref('Umbra CLI');
+const status = ref<'running' | 'stopped'>('stopped');
+const sessions = ref<Session[]>([]);
 
 const activeSessions = computed(() =>
-  sessions.value.filter(s => s.startedAt > new Date(Date.now() - 3600_000))
-)
+  sessions.value.filter((s) => s.startedAt > new Date(Date.now() - 3600_000)),
+);
 
 async function fetchSessions() {
-  const res = await fetch('/api/sessions')
-  sessions.value = await res.json()
+  const res = await fetch('/api/sessions');
+  sessions.value = await res.json();
 }
 
 function selectSession(id: string) {
-  console.log('Selected session:', id)
+  console.log('Selected session:', id);
 }
 
-onMounted(fetchSessions)
+onMounted(fetchSessions);
 </script>
 
 <style scoped>

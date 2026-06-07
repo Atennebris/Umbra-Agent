@@ -1,5 +1,5 @@
-import { buildRepoMap, summarizeRepoMap } from '../src/context/repo-map.js';
 import path from 'node:path';
+import { buildRepoMap, summarizeRepoMap } from '../src/context/repo-map.js';
 
 async function main() {
   const targetDir = process.argv[2] || process.cwd();
@@ -10,9 +10,9 @@ async function main() {
     const summary = summarizeRepoMap(repoMap);
 
     console.log(summary.markdown);
-    
+
     console.log('\n=======================================');
-    console.log(`📊 Статистика:`);
+    console.log('📊 Статистика:');
     console.log(`- Файлов в контексте: ${summary.repoFiles}`);
     console.log(`- Извлечено символов: ${summary.repoSymbols}`);
     console.log(`- Языки: ${summary.languages.join(', ')}`);

@@ -266,7 +266,10 @@ export function buildHeuristicCapabilities(
 ): ModelCapabilitiesPayload {
   const tools = /(gpt|claude|gemini|qwen|command|deepseek)/.test(normalizedModelId);
   const vision = /(vision|vl|4o|gemini|claude-3|claude-sonnet|pixtral)/.test(normalizedModelId);
-  const reasoning = /(reason|thinking|o1|o3|o4|r1|gpt-5|claude-sonnet-4|big-pickle|deepseek-v4|deepseek-r)/.test(normalizedModelId);
+  const reasoning =
+    /(reason|thinking|o1|o3|o4|r1|gpt-5|claude-sonnet-4|big-pickle|deepseek-v4|deepseek-r)/.test(
+      normalizedModelId,
+    );
   const structured = /(gpt|claude|gemini|command)/.test(normalizedModelId);
   const attachments = vision;
   const longContext = /(128k|200k|256k|1m)/.test(normalizedModelId);

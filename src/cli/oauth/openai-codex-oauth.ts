@@ -4,8 +4,8 @@
  * Policy: explicitly allowed by OpenAI, unlike Anthropic which banned equivalent usage.
  */
 
-import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
+import { createServer } from 'node:http';
 
 const CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 const AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
@@ -102,7 +102,11 @@ async function exchangeCode(code: string, verifier: string): Promise<TokenResult
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
-    return { type: 'failed', status: response.status, message: `Token exchange failed (${response.status}): ${text}` };
+    return {
+      type: 'failed',
+      status: response.status,
+      message: `Token exchange failed (${response.status}): ${text}`,
+    };
   }
 
   const json = (await response.json()) as {
@@ -137,7 +141,11 @@ async function doRefresh(refreshToken: string): Promise<TokenResult> {
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      return { type: 'failed', status: response.status, message: `Token refresh failed (${response.status}): ${text}` };
+      return {
+        type: 'failed',
+        status: response.status,
+        message: `Token refresh failed (${response.status}): ${text}`,
+      };
     }
 
     const json = (await response.json()) as {
@@ -147,7 +155,10 @@ async function doRefresh(refreshToken: string): Promise<TokenResult> {
     };
 
     if (!json.access_token || !json.refresh_token || typeof json.expires_in !== 'number') {
-      return { type: 'failed', message: `Missing fields in refresh response: ${JSON.stringify(json)}` };
+      return {
+        type: 'failed',
+        message: `Missing fields in refresh response: ${JSON.stringify(json)}`,
+      };
     }
 
     return {
@@ -216,7 +227,13 @@ function startOAuthServer(expectedState: string): Promise<{
       .on('error', () => {
         settle?.(null);
         resolve({
-          close: () => { try { server.close(); } catch { /* ignore */ } },
+          close: () => {
+            try {
+              server.close();
+            } catch {
+              /* ignore */
+            }
+          },
           cancelWait: () => {},
           waitForCode: async () => null,
         });
@@ -257,7 +274,9 @@ export async function loginOpenAICodex(options: {
     if (result?.code) {
       code = result.code;
     } else {
-      const input = await options.onPrompt('Browser callback timed out. Paste the redirect URL or auth code:');
+      const input = await options.onPrompt(
+        'Browser callback timed out. Paste the redirect URL or auth code:',
+      );
       const parsed = parseAuthInput(input);
       if (parsed.state && parsed.state !== state) throw new Error('State mismatch');
       code = parsed.code;
@@ -272,7 +291,7 @@ export async function loginOpenAICodex(options: {
       if (/unsupported_country_region_territory/i.test(tokenResult.message)) {
         throw new Error(
           'OpenAI rejected the token exchange for this region. ' +
-          'If you use a proxy, set HTTPS_PROXY or HTTP_PROXY and retry.',
+            'If you use a proxy, set HTTPS_PROXY or HTTP_PROXY and retry.',
         );
       }
       throw new Error(tokenResult.message);

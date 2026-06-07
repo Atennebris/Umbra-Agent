@@ -528,7 +528,13 @@ function buildFallbackBuckets(
     }
     bucket.matchCount += 1;
     if (bucket.snippets.length < maxSnippetsPerFile) {
-      bucket.snippets.push({ line: m.line, column: m.column, text: m.text, contextBefore: [], contextAfter: [] });
+      bucket.snippets.push({
+        line: m.line,
+        column: m.column,
+        text: m.text,
+        contextBefore: [],
+        contextAfter: [],
+      });
     } else {
       bucket.truncated = true;
     }
@@ -761,7 +767,16 @@ async function walkForFiles(
     const relPath = path.relative(cwd, childPath);
 
     if (entry.isDirectory()) {
-      await walkForFiles(childPath, cwd, includeHidden, glob, maxResults, results, onTruncated, onScanned);
+      await walkForFiles(
+        childPath,
+        cwd,
+        includeHidden,
+        glob,
+        maxResults,
+        results,
+        onTruncated,
+        onScanned,
+      );
     } else {
       onScanned();
       if (glob && !minimatchLite(entry.name, glob)) continue;
@@ -873,7 +888,11 @@ function fuzzyScore(query: string, target: string): { score: number; indices: nu
   if (t.includes(q)) {
     const idx = t.indexOf(q);
     const indices = Array.from({ length: q.length }, (_, i) => idx + i);
-    const bonus = target.endsWith(query) ? 20 : target.includes(`/${query}`) || target.includes(`\\${query}`) ? 10 : 0;
+    const bonus = target.endsWith(query)
+      ? 20
+      : target.includes(`/${query}`) || target.includes(`\\${query}`)
+        ? 10
+        : 0;
     return { score: 100 + bonus - Math.floor(t.length / 10), indices };
   }
 

@@ -50,13 +50,17 @@ describe('RequestUsage contract — new fields', () => {
 
   it('stores source: actual for real provider data', async () => {
     const logger = await makeTempLogger();
-    logger.log(makeRecord({ source: 'actual', inputTokens: 500, outputTokens: 100, totalTokens: 600 }));
+    logger.log(
+      makeRecord({ source: 'actual', inputTokens: 500, outputTokens: 100, totalTokens: 600 }),
+    );
     expect(logger.getLastRecord()?.source).toBe('actual');
   });
 
   it('stores source: estimated for fallback data', async () => {
     const logger = await makeTempLogger();
-    logger.log(makeRecord({ source: 'estimated', inputTokens: 0, outputTokens: 0, totalTokens: 0 }));
+    logger.log(
+      makeRecord({ source: 'estimated', inputTokens: 0, outputTokens: 0, totalTokens: 0 }),
+    );
     expect(logger.getLastRecord()?.source).toBe('estimated');
   });
 
@@ -191,8 +195,24 @@ describe('cost formula — OpenCode parity', () => {
 describe('session aggregation over multiple requests', () => {
   it('accumulates totals across requests', async () => {
     const logger = await makeTempLogger();
-    logger.log(makeRecord({ inputTokens: 1000, outputTokens: 200, totalTokens: 1200, source: 'actual', status: 'success' }));
-    logger.log(makeRecord({ inputTokens: 500, outputTokens: 100, totalTokens: 600, source: 'actual', status: 'success' }));
+    logger.log(
+      makeRecord({
+        inputTokens: 1000,
+        outputTokens: 200,
+        totalTokens: 1200,
+        source: 'actual',
+        status: 'success',
+      }),
+    );
+    logger.log(
+      makeRecord({
+        inputTokens: 500,
+        outputTokens: 100,
+        totalTokens: 600,
+        source: 'actual',
+        status: 'success',
+      }),
+    );
     const stats = logger.getStats();
     expect(stats.requests).toBe(2);
     expect(stats.inputTokens).toBe(1500);
@@ -202,14 +222,38 @@ describe('session aggregation over multiple requests', () => {
 
   it('getLastRecord returns the most recent successful record', async () => {
     const logger = await makeTempLogger();
-    logger.log(makeRecord({ requestId: 'req-1', inputTokens: 100, outputTokens: 50, totalTokens: 150, status: 'success' }));
-    logger.log(makeRecord({ requestId: 'req-2', inputTokens: 200, outputTokens: 80, totalTokens: 280, status: 'success' }));
+    logger.log(
+      makeRecord({
+        requestId: 'req-1',
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+        status: 'success',
+      }),
+    );
+    logger.log(
+      makeRecord({
+        requestId: 'req-2',
+        inputTokens: 200,
+        outputTokens: 80,
+        totalTokens: 280,
+        status: 'success',
+      }),
+    );
     expect(logger.getLastRecord()?.requestId).toBe('req-2');
   });
 
   it('failed records do not update lastRecord', async () => {
     const logger = await makeTempLogger();
-    logger.log(makeRecord({ requestId: 'req-ok', inputTokens: 100, outputTokens: 50, totalTokens: 150, status: 'success' }));
+    logger.log(
+      makeRecord({
+        requestId: 'req-ok',
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+        status: 'success',
+      }),
+    );
     logger.log({ ...makeRecord(), requestId: 'req-fail', status: 'failed', error: 'timeout' });
     expect(logger.getLastRecord()?.requestId).toBe('req-ok');
   });

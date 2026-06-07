@@ -23,9 +23,16 @@ async function getSecondaryAccountToken(): Promise<string | null> {
   }
 }
 
-async function loadOpencodeZenModule(): Promise<{ OpencodeZenProviderClient: new (profile: ProviderProfile, fetcher: FetchLike) => ProviderClient } | null> {
+async function loadOpencodeZenModule(): Promise<{
+  OpencodeZenProviderClient: new (profile: ProviderProfile, fetcher: FetchLike) => ProviderClient;
+} | null> {
   try {
-    return await import('./opencode-zen-provider.js') as { OpencodeZenProviderClient: new (profile: ProviderProfile, fetcher: FetchLike) => ProviderClient };
+    return (await import('./opencode-zen-provider.js')) as {
+      OpencodeZenProviderClient: new (
+        profile: ProviderProfile,
+        fetcher: FetchLike,
+      ) => ProviderClient;
+    };
   } catch {
     return null;
   }
@@ -42,13 +49,22 @@ class OpencodeZenProviderClientProxy implements ProviderClient {
 
   async #resolve(): Promise<ProviderClient> {
     const mod = await loadOpencodeZenModule();
-    if (!mod) throw new Error('opencode-zen provider module not found. Place opencode-zen-provider.ts in src/providers/.');
+    if (!mod)
+      throw new Error(
+        'opencode-zen provider module not found. Place opencode-zen-provider.ts in src/providers/.',
+      );
     return new mod.OpencodeZenProviderClient(this.#profile, this.#fetcher);
   }
 
-  async listModels() { return (await this.#resolve()).listModels(); }
-  async testConnection() { return (await this.#resolve()).testConnection(); }
-  async complete(req: ProviderCompleteRequest) { return (await this.#resolve()).complete(req); }
+  async listModels() {
+    return (await this.#resolve()).listModels();
+  }
+  async testConnection() {
+    return (await this.#resolve()).testConnection();
+  }
+  async complete(req: ProviderCompleteRequest) {
+    return (await this.#resolve()).complete(req);
+  }
   async completeStream(req: ProviderCompleteRequest, obs: ProviderStreamObserver) {
     const client = await this.#resolve();
     return client.completeStream ? client.completeStream(req, obs) : client.complete(req);
@@ -309,7 +325,8 @@ class OpenAICompatibleProviderClient implements ProviderClient {
     const model = resolveModel(this.#profile, request);
     const startedAt = Date.now();
     const isMistralProvider = this.#providerType === 'mistral';
-    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     // Magistral always reasons (built-in, no parameter needed)
     const mistralThinking = isMistralProvider && isMistralThinkingModel(model);
     const serializedMessages = serializeOpenAiMessages(request.messages, mistralThinking);
@@ -444,7 +461,7 @@ class OpenAICompatibleProviderClient implements ProviderClient {
             const rawOut = ou.completion_tokens ?? 0;
             const rawTotal = ou.total_tokens ?? 0;
             const rawIn = ou.prompt_tokens ?? 0;
-            const inputTokens = rawIn > 0 ? rawIn : (rawTotal > rawOut ? rawTotal - rawOut : 0);
+            const inputTokens = rawIn > 0 ? rawIn : rawTotal > rawOut ? rawTotal - rawOut : 0;
             return {
               inputTokens,
               outputTokens: rawOut,
@@ -483,10 +500,14 @@ class OpenAICompatibleProviderClient implements ProviderClient {
     const model = resolveModel(this.#profile, request);
     const startedAt = Date.now();
     const isMistralProvider = this.#providerType === 'mistral';
-    const streamThinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const streamThinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     // Magistral always reasons (built-in, no parameter needed)
     const streamMistralThinking = isMistralProvider && isMistralThinkingModel(model);
-    const streamSerializedMessages = serializeOpenAiMessages(request.messages, streamMistralThinking);
+    const streamSerializedMessages = serializeOpenAiMessages(
+      request.messages,
+      streamMistralThinking,
+    );
     const streamMessagesWithReasoning = streamSerializedMessages.filter(
       (m) => isRecord(m) && typeof (m as Record<string, unknown>).reasoning_content === 'string',
     ).length;
@@ -510,7 +531,8 @@ class OpenAICompatibleProviderClient implements ProviderClient {
         thinkInput: streamThinkInput ?? null,
         isMistralThinking: streamMistralThinking,
         supportsReasoningEffort: !isMistralProvider ? supportsReasoningEffort(model) : null,
-        reasoningEffortSent: (streamReasoningParams as Record<string, unknown>).reasoning_effort ?? null,
+        reasoningEffortSent:
+          (streamReasoningParams as Record<string, unknown>).reasoning_effort ?? null,
         temperatureOverride: (streamReasoningParams as Record<string, unknown>).temperature ?? null,
       },
     });
@@ -623,8 +645,10 @@ class OpenAICompatibleProviderClient implements ProviderClient {
           if (isRecord(msg.usage)) {
             const u = msg.usage;
             if (typeof u.input_tokens === 'number') anthropicInputTokens = u.input_tokens;
-            if (typeof u.cache_read_input_tokens === 'number') anthropicCacheRead = u.cache_read_input_tokens;
-            if (typeof u.cache_creation_input_tokens === 'number') anthropicCacheWrite = u.cache_creation_input_tokens;
+            if (typeof u.cache_read_input_tokens === 'number')
+              anthropicCacheRead = u.cache_read_input_tokens;
+            if (typeof u.cache_creation_input_tokens === 'number')
+              anthropicCacheWrite = u.cache_creation_input_tokens;
           }
         }
 
@@ -683,7 +707,7 @@ class OpenAICompatibleProviderClient implements ProviderClient {
         const rawTotal = typeof u.total_tokens === 'number' ? u.total_tokens : 0;
         const rawIn = typeof u.prompt_tokens === 'number' ? u.prompt_tokens : 0;
         // Infer input tokens from total when prompt_tokens is absent
-        const inputTokens = rawIn > 0 ? rawIn : (rawTotal > rawOut ? rawTotal - rawOut : 0);
+        const inputTokens = rawIn > 0 ? rawIn : rawTotal > rawOut ? rawTotal - rawOut : 0;
         streamUsage = {
           inputTokens,
           outputTokens: rawOut,
@@ -739,8 +763,10 @@ class OpenAICompatibleProviderClient implements ProviderClient {
     // missing message_start (no input_tokens) doesn't zero out prompt_tokens already captured
     // from the final OpenAI-compatible usage chunk.
     if (anthropicInputTokens > 0 || anthropicOutputTokens > 0) {
-      const mergedInput = anthropicInputTokens > 0 ? anthropicInputTokens : (streamUsage?.inputTokens ?? 0);
-      const mergedOutput = anthropicOutputTokens > 0 ? anthropicOutputTokens : (streamUsage?.outputTokens ?? 0);
+      const mergedInput =
+        anthropicInputTokens > 0 ? anthropicInputTokens : (streamUsage?.inputTokens ?? 0);
+      const mergedOutput =
+        anthropicOutputTokens > 0 ? anthropicOutputTokens : (streamUsage?.outputTokens ?? 0);
       streamUsage = {
         inputTokens: mergedInput,
         outputTokens: mergedOutput,
@@ -1041,7 +1067,8 @@ class AnthropicProviderClient implements ProviderClient {
       request.messages,
       request.responseFormat,
     );
-    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     const thinkingBlock = buildAnthropicThinking(thinkInput);
     writeDebugEvent({
       component: 'provider',
@@ -1156,7 +1183,8 @@ class AnthropicProviderClient implements ProviderClient {
     _observer: ProviderStreamObserver,
   ): Promise<ProviderCompleteResponse> {
     const model = resolveModel(this.#profile, request);
-    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     const thinkingBlock = buildAnthropicThinking(thinkInput);
     writeDebugEvent({
       component: 'provider',
@@ -1559,11 +1587,11 @@ function dedupeListedModels(models: NormalizedListedModel[]): ProviderModelPaylo
 const MISTRAL_VERSION_SUFFIXES = [
   /-latest$/,
   /-\d{4}(-\d{2}(-\d{2})?)?$/, // -2604, -2604-01, -2604-01-15
-  /-\d+\.\d+$/,                  // -3.5
-  /-\d+-\d+$/,                   // -3-5
-  /-v\d+(\.\d+)*$/,              // -v2, -v2.1
-  /-\d+$/,                       // -3 (single version digit, e.g. mistral-medium-3 → mistral-medium)
-                                  // Safe: models ending in letter like -7b, -3b, -12b do NOT match
+  /-\d+\.\d+$/, // -3.5
+  /-\d+-\d+$/, // -3-5
+  /-v\d+(\.\d+)*$/, // -v2, -v2.1
+  /-\d+$/, // -3 (single version digit, e.g. mistral-medium-3 → mistral-medium)
+  // Safe: models ending in letter like -7b, -3b, -12b do NOT match
 ];
 
 function getMistralModelFamily(id: string): string {
@@ -1612,7 +1640,10 @@ function formatMistralModelName(rawId: string): string {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1));
 
   const name = prefix ? [prefix, ...parts].join(' ') : parts.join(' ');
-  return name.replace(/\bLatest\b/g, '(Latest)').replace(/\s+/g, ' ').trim();
+  return name
+    .replace(/\bLatest\b/g, '(Latest)')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function normalizeMistralListedModels(models: NormalizedListedModel[]): ProviderModelPayload[] {
@@ -1805,8 +1836,14 @@ function buildAnthropicThinking(
  * Blocklisted: DeepSeek, Qwen, Kimi etc. use non-standard APIs or no reasoning param.
  */
 const REASONING_EFFORT_BLOCKLIST = [
-  'deepseek-chat', 'deepseek-reasoner', 'deepseek-v3',
-  'minimax', 'glm', 'kimi', 'qwen', 'big-pickle',
+  'deepseek-chat',
+  'deepseek-reasoner',
+  'deepseek-v3',
+  'minimax',
+  'glm',
+  'kimi',
+  'qwen',
+  'big-pickle',
 ];
 
 function supportsReasoningEffort(modelId: string): boolean {
@@ -1830,7 +1867,9 @@ function buildOpenAIReasoningParams(
   if (thinkInput == null || !supportsReasoningEffort(modelId)) return {};
   const effort =
     typeof thinkInput === 'string'
-      ? (thinkInput === 'max' ? 'high' : thinkInput)
+      ? thinkInput === 'max'
+        ? 'high'
+        : thinkInput
       : effortFromBudget(thinkInput);
   return { reasoning_effort: effort };
 }
@@ -1862,7 +1901,10 @@ function isAdjustableMistralReasoningModel(modelId: string): boolean {
  * - mistral-small / mistral-medium: optional reasoning_effort (low/medium/high)
  * - All others: {}
  */
-function buildMistralReasoningParams(modelId: string, thinkInput: ThinkInput): Record<string, unknown> {
+function buildMistralReasoningParams(
+  modelId: string,
+  thinkInput: ThinkInput,
+): Record<string, unknown> {
   // Magistral always reasons — sending reasoning_effort is not needed/supported
   if (isMistralThinkingModel(modelId)) return {};
   // Adjustable reasoning models use reasoning_effort when explicitly requested
@@ -1878,7 +1920,10 @@ function buildMistralReasoningParams(modelId: string, thinkInput: ThinkInput): R
  * Extract text and reasoning from Magistral's array content response.
  * Content: [{type:"thinking", thinking:[{type:"text",text:"..."}]}, {type:"text",text:"..."}]
  */
-function extractMistralContentChunks(rawContent: unknown): { text: string | null; reasoning: string | null } {
+function extractMistralContentChunks(rawContent: unknown): {
+  text: string | null;
+  reasoning: string | null;
+} {
   if (typeof rawContent === 'string') return { text: rawContent || null, reasoning: null };
   if (!Array.isArray(rawContent)) return { text: null, reasoning: null };
   let text: string | null = null;
@@ -2425,8 +2470,18 @@ function readCodexOAuthToken(profileId: string): CodexOAuthEntry | null {
     const store = JSON.parse(content) as Record<string, unknown>;
     const token = store[profileId];
     if (!isRecord(token)) return null;
-    if (typeof token.access !== 'string' || typeof token.refresh !== 'string' || typeof token.expires !== 'number') return null;
-    return { access: token.access, refresh: token.refresh, expires: token.expires, accountId: String(token.accountId ?? '') };
+    if (
+      typeof token.access !== 'string' ||
+      typeof token.refresh !== 'string' ||
+      typeof token.expires !== 'number'
+    )
+      return null;
+    return {
+      access: token.access,
+      refresh: token.refresh,
+      expires: token.expires,
+      accountId: String(token.accountId ?? ''),
+    };
   } catch {
     return null;
   }
@@ -2437,7 +2492,9 @@ function saveCodexOAuthToken(profileId: string, token: CodexOAuthEntry): void {
     const home = process.env.UMBRA_HOME ?? path.join(os.homedir(), '.umbra');
     const filePath = path.join(home, 'oauth-tokens.json');
     let store: Record<string, unknown> = {};
-    try { store = JSON.parse(fs.readFileSync(filePath, 'utf8')) as Record<string, unknown>; } catch {}
+    try {
+      store = JSON.parse(fs.readFileSync(filePath, 'utf8')) as Record<string, unknown>;
+    } catch {}
     store[profileId] = token;
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(store, null, 2), { encoding: 'utf8', mode: 0o600 });
@@ -2473,13 +2530,21 @@ async function refreshCodexToken(refreshToken: string): Promise<CodexOAuthEntry>
   const response = await fetch(CODEX_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken, client_id: CODEX_CLIENT_ID }),
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: CODEX_CLIENT_ID,
+    }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     throw new Error(`Codex token refresh failed (${response.status}): ${text}`);
   }
-  const json = (await response.json()) as { access_token?: string; refresh_token?: string; expires_in?: number };
+  const json = (await response.json()) as {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
   if (!json.access_token || !json.refresh_token || typeof json.expires_in !== 'number') {
     throw new Error('Missing fields in Codex refresh response');
   }
@@ -2491,7 +2556,11 @@ async function refreshCodexToken(refreshToken: string): Promise<CodexOAuthEntry>
   };
 }
 
-function buildCodexHeaders(access: string, accountId: string, extra: Record<string, string> = {}): Record<string, string> {
+function buildCodexHeaders(
+  access: string,
+  accountId: string,
+  extra: Record<string, string> = {},
+): Record<string, string> {
   return {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${access}`,
@@ -2502,8 +2571,14 @@ function buildCodexHeaders(access: string, accountId: string, extra: Record<stri
   };
 }
 
-function buildCodexInput(messages: ProviderCompleteRequest['messages']): { system: string; input: unknown[] } {
-  const systemParts = messages.filter((m) => m.role === 'system').map((m) => m.content ?? '').filter(Boolean);
+function buildCodexInput(messages: ProviderCompleteRequest['messages']): {
+  system: string;
+  input: unknown[];
+} {
+  const systemParts = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content ?? '')
+    .filter(Boolean);
   const nonSystem = messages.filter((m) => m.role !== 'system');
 
   // Responses API input items: message, function_call, function_call_output are all top-level.
@@ -2521,7 +2596,10 @@ function buildCodexInput(messages: ProviderCompleteRequest['messages']): { syste
       const items: unknown[] = [];
       // Re-include reasoning item from prior turn so the model keeps tool-use context.
       if (message.reasoningContent) {
-        items.push({ type: 'reasoning', summary: [{ type: 'summary_text', text: message.reasoningContent }] });
+        items.push({
+          type: 'reasoning',
+          summary: [{ type: 'summary_text', text: message.reasoningContent }],
+        });
       }
       if (message.toolCalls && message.toolCalls.length > 0) {
         if (message.content) {
@@ -2532,7 +2610,12 @@ function buildCodexInput(messages: ProviderCompleteRequest['messages']): { syste
           });
         }
         for (const tc of message.toolCalls) {
-          items.push({ type: 'custom_tool_call', call_id: tc.id, name: tc.name.replace(/[^a-zA-Z0-9_-]/g, '_'), input: JSON.stringify(tc.arguments) });
+          items.push({
+            type: 'custom_tool_call',
+            call_id: tc.id,
+            name: tc.name.replace(/[^a-zA-Z0-9_-]/g, '_'),
+            input: JSON.stringify(tc.arguments),
+          });
         }
         return items;
       }
@@ -2542,10 +2625,12 @@ function buildCodexInput(messages: ProviderCompleteRequest['messages']): { syste
       });
       return items;
     }
-    return [{
-      role: 'user',
-      content: [{ type: 'input_text', text: message.content ?? '' }],
-    }];
+    return [
+      {
+        role: 'user',
+        content: [{ type: 'input_text', text: message.content ?? '' }],
+      },
+    ];
   });
 
   return { system: systemParts.join('\n\n'), input };
@@ -2554,10 +2639,12 @@ function buildCodexInput(messages: ProviderCompleteRequest['messages']): { syste
 function extractCodexUsage(rawUsage: unknown): ProviderCompleteResponse['usage'] {
   if (!isRecord(rawUsage)) return undefined;
   const inputTokens = typeof rawUsage.input_tokens === 'number' ? rawUsage.input_tokens : undefined;
-  const outputTokens = typeof rawUsage.output_tokens === 'number' ? rawUsage.output_tokens : undefined;
+  const outputTokens =
+    typeof rawUsage.output_tokens === 'number' ? rawUsage.output_tokens : undefined;
   const totalTokens = typeof rawUsage.total_tokens === 'number' ? rawUsage.total_tokens : undefined;
   const reasoningTokens =
-    isRecord(rawUsage.output_tokens_details) && typeof rawUsage.output_tokens_details.reasoning_tokens === 'number'
+    isRecord(rawUsage.output_tokens_details) &&
+    typeof rawUsage.output_tokens_details.reasoning_tokens === 'number'
       ? rawUsage.output_tokens_details.reasoning_tokens
       : undefined;
   if (inputTokens === undefined && outputTokens === undefined) return undefined;
@@ -2571,7 +2658,15 @@ function parseCodexResponsePayload(
   startedAt: number,
 ): ProviderCompleteResponse {
   if (!isRecord(payload)) {
-    return { providerProfileId: profileId, providerType: 'openai-codex', model, outputText: null, outputJson: null, toolCalls: [], stopReason: null };
+    return {
+      providerProfileId: profileId,
+      providerType: 'openai-codex',
+      model,
+      outputText: null,
+      outputJson: null,
+      toolCalls: [],
+      stopReason: null,
+    };
   }
 
   const output = Array.isArray(payload.output) ? payload.output : [];
@@ -2605,7 +2700,12 @@ function parseCodexResponsePayload(
       const args = typeof item.arguments === 'string' ? item.arguments : '{}';
       if (name) toolCalls.push({ id: callId || name, name, arguments: parseJsonObject(args) });
     } else if (item.type === 'custom_tool_call') {
-      const callId = typeof item.call_id === 'string' ? item.call_id : typeof item.id === 'string' ? item.id : '';
+      const callId =
+        typeof item.call_id === 'string'
+          ? item.call_id
+          : typeof item.id === 'string'
+            ? item.id
+            : '';
       const name = typeof item.name === 'string' ? item.name : '';
       const input = typeof item.input === 'string' ? item.input : '{}';
       if (name) toolCalls.push({ id: callId || name, name, arguments: parseJsonObject(input) });
@@ -2615,7 +2715,18 @@ function parseCodexResponsePayload(
   const outputText = textParts.length > 0 ? textParts.join('\n') : null;
   const reasoningContent = reasoningParts.length > 0 ? reasoningParts.join('\n') : undefined;
   const usage = extractCodexUsage(payload.usage);
-  writeDebugEvent({ component: 'provider', level: 'info', message: 'codex completion finished', data: { profileId, model, toolCalls: toolCalls.length, hasReasoning: reasoningParts.length > 0, durationMs: Date.now() - startedAt } });
+  writeDebugEvent({
+    component: 'provider',
+    level: 'info',
+    message: 'codex completion finished',
+    data: {
+      profileId,
+      model,
+      toolCalls: toolCalls.length,
+      hasReasoning: reasoningParts.length > 0,
+      durationMs: Date.now() - startedAt,
+    },
+  });
 
   return {
     providerProfileId: profileId,
@@ -2631,7 +2742,12 @@ function parseCodexResponsePayload(
 }
 
 function toCodexTool(tool: NonNullable<ProviderCompleteRequest['tools']>[number]) {
-  return { type: 'function', name: tool.name, description: tool.description ?? '', parameters: tool.inputSchema };
+  return {
+    type: 'function',
+    name: tool.name,
+    description: tool.description ?? '',
+    parameters: tool.inputSchema,
+  };
 }
 
 // Context windows for known Codex-compatible models (fallback when API doesn't return them)
@@ -2652,9 +2768,9 @@ const CODEX_KNOWN_CONTEXT_WINDOWS: Record<string, number> = {
   'gpt-4o-mini': 128_000,
   // Reasoning models
   'o4-mini': 200_000,
-  'o3': 200_000,
+  o3: 200_000,
   'o3-mini': 200_000,
-  'o1': 200_000,
+  o1: 200_000,
   'o1-mini': 128_000,
 };
 
@@ -2663,11 +2779,11 @@ const CODEX_KNOWN_CONTEXT_WINDOWS: Record<string, number> = {
 // The live /codex/models endpoint returns a subset of these; we merge live+static so the
 // picker always shows the full set, with live data taking priority.
 const CODEX_STATIC_MODELS: ProviderModelPayload[] = [
-  { id: 'gpt-5.5',       name: 'GPT-5.5',       contextWindow: 272_000 },
-  { id: 'gpt-5.4',       name: 'GPT-5.4',        contextWindow: 272_000 },
-  { id: 'gpt-5.4-mini',  name: 'GPT-5.4-Mini',   contextWindow: 272_000 },
-  { id: 'gpt-5.3-codex', name: 'gpt-5.3-codex',  contextWindow: 272_000 },
-  { id: 'gpt-5.2',       name: 'gpt-5.2',         contextWindow: 272_000 },
+  { id: 'gpt-5.5', name: 'GPT-5.5', contextWindow: 272_000 },
+  { id: 'gpt-5.4', name: 'GPT-5.4', contextWindow: 272_000 },
+  { id: 'gpt-5.4-mini', name: 'GPT-5.4-Mini', contextWindow: 272_000 },
+  { id: 'gpt-5.3-codex', name: 'gpt-5.3-codex', contextWindow: 272_000 },
+  { id: 'gpt-5.2', name: 'gpt-5.2', contextWindow: 272_000 },
 ];
 
 // Models that should never appear in the picker (visibility:"hide" in Codex models.json).
@@ -2675,9 +2791,18 @@ const CODEX_HIDDEN_MODEL_IDS = new Set(['codex-auto-review']);
 
 // Non-chat modalities that can't be used via /codex/responses
 const CODEX_EXCLUDE_FRAGMENTS = [
-  'embedding', 'whisper', 'tts', 'dall-e', 'dall_e',
-  'babbage', 'davinci', 'ada', 'curie',
-  'transcribe', 'realtime', 'audio-',
+  'embedding',
+  'whisper',
+  'tts',
+  'dall-e',
+  'dall_e',
+  'babbage',
+  'davinci',
+  'ada',
+  'curie',
+  'transcribe',
+  'realtime',
+  'audio-',
 ];
 
 // Show all models except obvious non-chat modalities and known hidden models.
@@ -2704,9 +2829,7 @@ function extractCodexCompatibleModels(json: unknown): ProviderModelPayload[] {
     if (!isRecord(entry)) continue;
 
     const id =
-      typeof entry.id === 'string' ? entry.id
-        : typeof entry.slug === 'string' ? entry.slug
-          : '';
+      typeof entry.id === 'string' ? entry.id : typeof entry.slug === 'string' ? entry.slug : '';
     if (!id || !isCodexCompatibleModelId(id)) continue;
 
     const key = id.toLowerCase();
@@ -2714,14 +2837,19 @@ function extractCodexCompatibleModels(json: unknown): ProviderModelPayload[] {
     seen.add(key);
 
     const name =
-      typeof entry.name === 'string' ? entry.name
-        : typeof entry.title === 'string' ? entry.title
-          : typeof entry.display_name === 'string' ? entry.display_name
+      typeof entry.name === 'string'
+        ? entry.name
+        : typeof entry.title === 'string'
+          ? entry.title
+          : typeof entry.display_name === 'string'
+            ? entry.display_name
             : id;
 
     const apiContext =
-      typeof entry.context_window === 'number' ? entry.context_window
-        : typeof entry.max_context_length === 'number' ? entry.max_context_length
+      typeof entry.context_window === 'number'
+        ? entry.context_window
+        : typeof entry.max_context_length === 'number'
+          ? entry.max_context_length
           : null;
     const contextWindow = apiContext ?? CODEX_KNOWN_CONTEXT_WINDOWS[id] ?? null;
 
@@ -2769,10 +2897,15 @@ class OpenAICodexProviderClient implements ProviderClient {
         return { access: refreshed.access, accountId: refreshed.accountId };
       } catch (err) {
         if (isRefreshTokenInvalidated(err)) {
-          throw new Error(`ChatGPT session expired — please reconnect your provider. Run: umbra providers connect openai-codex`);
+          throw new Error(
+            'ChatGPT session expired — please reconnect your provider. Run: umbra providers connect openai-codex',
+          );
         }
-        if (Date.now() < stored.expires) return { access: stored.access, accountId: stored.accountId };
-        throw new Error(`ChatGPT OAuth token expired and refresh failed. Run: umbra providers connect openai-codex`);
+        if (Date.now() < stored.expires)
+          return { access: stored.access, accountId: stored.accountId };
+        throw new Error(
+          'ChatGPT OAuth token expired and refresh failed. Run: umbra providers connect openai-codex',
+        );
       }
     }
     return { access: stored.access, accountId: stored.accountId };
@@ -2787,7 +2920,9 @@ class OpenAICodexProviderClient implements ProviderClient {
       return { access: refreshed.access, accountId: refreshed.accountId };
     } catch (err) {
       if (isRefreshTokenInvalidated(err)) {
-        throw new Error(`ChatGPT session was invalidated (logged out or password changed). Reconnect: umbra providers connect openai-codex`);
+        throw new Error(
+          'ChatGPT session was invalidated (logged out or password changed). Reconnect: umbra providers connect openai-codex',
+        );
       }
       throw err;
     }
@@ -2819,10 +2954,15 @@ class OpenAICodexProviderClient implements ProviderClient {
           const response = await this.#fetcher(url, { headers });
           if (!response.ok) {
             const body = await response.text().catch(() => '');
-            writeDebugEvent({ component: 'provider', level: 'info', message: 'codex listModels failed', data: { url, status: response.status, body: body.slice(0, 200) } });
+            writeDebugEvent({
+              component: 'provider',
+              level: 'info',
+              message: 'codex listModels failed',
+              data: { url, status: response.status, body: body.slice(0, 200) },
+            });
             continue;
           }
-          const json = await response.json() as unknown;
+          const json = (await response.json()) as unknown;
           const liveModels = extractCodexCompatibleModels(json);
           // Always merge live with static: live data takes priority, static fills gaps.
           const liveIds = new Set(liveModels.map((m) => m.id.toLowerCase()));
@@ -2831,22 +2971,43 @@ class OpenAICodexProviderClient implements ProviderClient {
             ...CODEX_STATIC_MODELS.filter((m) => !liveIds.has(m.id.toLowerCase())),
           ].sort((a, b) => {
             const staticIdx = (id: string) => CODEX_STATIC_MODELS.findIndex((m) => m.id === id);
-            const ai = staticIdx(a.id), bi = staticIdx(b.id);
+            const ai = staticIdx(a.id);
+            const bi = staticIdx(b.id);
             if (ai !== -1 && bi !== -1) return ai - bi;
             if (ai !== -1) return -1;
             if (bi !== -1) return 1;
             return a.id.localeCompare(b.id);
           });
-          writeDebugEvent({ component: 'provider', level: 'info', message: 'codex listModels live', data: { url, liveCount: liveModels.length, totalCount: merged.length } });
+          writeDebugEvent({
+            component: 'provider',
+            level: 'info',
+            message: 'codex listModels live',
+            data: { url, liveCount: liveModels.length, totalCount: merged.length },
+          });
           return merged;
         } catch (err) {
-          writeDebugEvent({ component: 'provider', level: 'info', message: 'codex listModels error', data: { url, error: err instanceof Error ? err.message : String(err) } });
+          writeDebugEvent({
+            component: 'provider',
+            level: 'info',
+            message: 'codex listModels error',
+            data: { url, error: err instanceof Error ? err.message : String(err) },
+          });
         }
       }
     } catch (err) {
-      writeDebugEvent({ component: 'provider', level: 'warn', message: 'codex listModels token error', data: { error: err instanceof Error ? err.message : String(err) } });
+      writeDebugEvent({
+        component: 'provider',
+        level: 'warn',
+        message: 'codex listModels token error',
+        data: { error: err instanceof Error ? err.message : String(err) },
+      });
     }
-    writeDebugEvent({ component: 'provider', level: 'info', message: 'codex listModels: static fallback', data: { count: CODEX_STATIC_MODELS.length } });
+    writeDebugEvent({
+      component: 'provider',
+      level: 'info',
+      message: 'codex listModels: static fallback',
+      data: { count: CODEX_STATIC_MODELS.length },
+    });
     return [...CODEX_STATIC_MODELS];
   }
 
@@ -2862,17 +3023,33 @@ class OpenAICodexProviderClient implements ProviderClient {
   async complete(request: ProviderCompleteRequest): Promise<ProviderCompleteResponse> {
     const { sanitizedRequest, restoreNames } = sanitizeRequestToolNames(request);
     const model = resolveModel(this.#profile, sanitizedRequest);
-    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     const { access, accountId } = await this.#getToken();
     const startedAt = Date.now();
     const baseUrl = trimTrailingSlash(this.#profile.baseUrl || 'https://chatgpt.com/backend-api');
     const { system, input } = buildCodexInput(sanitizedRequest.messages);
 
-    writeDebugEvent({ component: 'provider', level: 'info', message: 'codex completion requested', data: { profileId: this.#profile.id, model } });
+    writeDebugEvent({
+      component: 'provider',
+      level: 'info',
+      message: 'codex completion requested',
+      data: { profileId: this.#profile.id, model },
+    });
 
     const reasoningParams =
       thinkInput != null
-        ? { reasoning: { effort: typeof thinkInput === 'string' ? (thinkInput === 'max' ? 'high' : thinkInput) : effortFromBudget(thinkInput), summary: 'auto' } }
+        ? {
+            reasoning: {
+              effort:
+                typeof thinkInput === 'string'
+                  ? thinkInput === 'max'
+                    ? 'high'
+                    : thinkInput
+                  : effortFromBudget(thinkInput),
+              summary: 'auto',
+            },
+          }
         : {};
 
     const requestBody = JSON.stringify({
@@ -2883,8 +3060,12 @@ class OpenAICodexProviderClient implements ProviderClient {
       input,
       text: { verbosity: thinkInput != null ? 'medium' : 'low' },
       ...reasoningParams,
-      ...(sanitizedRequest.tools ? { tools: sanitizedRequest.tools.map(toCodexTool), tool_choice: 'auto' } : {}),
-      ...(typeof sanitizedRequest.maxTokens === 'number' ? { max_output_tokens: sanitizedRequest.maxTokens } : {}),
+      ...(sanitizedRequest.tools
+        ? { tools: sanitizedRequest.tools.map(toCodexTool), tool_choice: 'auto' }
+        : {}),
+      ...(typeof sanitizedRequest.maxTokens === 'number'
+        ? { max_output_tokens: sanitizedRequest.maxTokens }
+        : {}),
     });
 
     let tok = { access, accountId };
@@ -2905,17 +3086,29 @@ class OpenAICodexProviderClient implements ProviderClient {
 
     if (!response.ok) {
       const body = await readErrorBody(response);
-      if (response.status === 429) throw new Error(`ChatGPT usage limit reached. (${response.status})`);
+      if (response.status === 429)
+        throw new Error(`ChatGPT usage limit reached. (${response.status})`);
       throw new Error(extractProviderErrorMessage('openai-codex', response.status, body));
     }
 
-    return restoreNames(parseCodexResponsePayload((await response.json()) as unknown, this.#profile.id, model, startedAt));
+    return restoreNames(
+      parseCodexResponsePayload(
+        (await response.json()) as unknown,
+        this.#profile.id,
+        model,
+        startedAt,
+      ),
+    );
   }
 
-  async completeStream(request: ProviderCompleteRequest, observer: ProviderStreamObserver): Promise<ProviderCompleteResponse> {
+  async completeStream(
+    request: ProviderCompleteRequest,
+    observer: ProviderStreamObserver,
+  ): Promise<ProviderCompleteResponse> {
     const { sanitizedRequest, restoreNames } = sanitizeRequestToolNames(request);
     const model = resolveModel(this.#profile, sanitizedRequest);
-    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput }).thinkBudget;
+    const thinkInput = (request as ProviderCompleteRequest & { thinkBudget?: ThinkInput })
+      .thinkBudget;
     const { access, accountId } = await this.#getToken();
     const startedAt = Date.now();
     const baseUrl = trimTrailingSlash(this.#profile.baseUrl || 'https://chatgpt.com/backend-api');
@@ -2923,7 +3116,17 @@ class OpenAICodexProviderClient implements ProviderClient {
 
     const reasoningParams =
       thinkInput != null
-        ? { reasoning: { effort: typeof thinkInput === 'string' ? (thinkInput === 'max' ? 'high' : thinkInput) : effortFromBudget(thinkInput), summary: 'auto' } }
+        ? {
+            reasoning: {
+              effort:
+                typeof thinkInput === 'string'
+                  ? thinkInput === 'max'
+                    ? 'high'
+                    : thinkInput
+                  : effortFromBudget(thinkInput),
+              summary: 'auto',
+            },
+          }
         : {};
 
     const streamBody = JSON.stringify({
@@ -2934,14 +3137,21 @@ class OpenAICodexProviderClient implements ProviderClient {
       input,
       text: { verbosity: thinkInput != null ? 'medium' : 'low' },
       ...reasoningParams,
-      ...(sanitizedRequest.tools ? { tools: sanitizedRequest.tools.map(toCodexTool), tool_choice: 'auto' } : {}),
-      ...(typeof sanitizedRequest.maxTokens === 'number' ? { max_output_tokens: sanitizedRequest.maxTokens } : {}),
+      ...(sanitizedRequest.tools
+        ? { tools: sanitizedRequest.tools.map(toCodexTool), tool_choice: 'auto' }
+        : {}),
+      ...(typeof sanitizedRequest.maxTokens === 'number'
+        ? { max_output_tokens: sanitizedRequest.maxTokens }
+        : {}),
     });
 
     let streamTok = { access, accountId };
     let response = await this.#fetcher(`${baseUrl}/codex/responses`, {
       method: 'POST',
-      headers: { ...buildCodexHeaders(streamTok.access, streamTok.accountId, this.#profile.extraHeaders), accept: 'text/event-stream' },
+      headers: {
+        ...buildCodexHeaders(streamTok.access, streamTok.accountId, this.#profile.extraHeaders),
+        accept: 'text/event-stream',
+      },
       body: streamBody,
     });
 
@@ -2949,14 +3159,18 @@ class OpenAICodexProviderClient implements ProviderClient {
       streamTok = await this.#forceRefreshToken();
       response = await this.#fetcher(`${baseUrl}/codex/responses`, {
         method: 'POST',
-        headers: { ...buildCodexHeaders(streamTok.access, streamTok.accountId, this.#profile.extraHeaders), accept: 'text/event-stream' },
+        headers: {
+          ...buildCodexHeaders(streamTok.access, streamTok.accountId, this.#profile.extraHeaders),
+          accept: 'text/event-stream',
+        },
         body: streamBody,
       });
     }
 
     if (!response.ok) {
       const body = await readErrorBody(response);
-      if (response.status === 429) throw new Error(`ChatGPT usage limit reached. (${response.status})`);
+      if (response.status === 429)
+        throw new Error(`ChatGPT usage limit reached. (${response.status})`);
       throw new Error(extractProviderErrorMessage('openai-codex', response.status, body));
     }
 
@@ -2972,13 +3186,19 @@ class OpenAICodexProviderClient implements ProviderClient {
 
       if (type === 'response.output_text.delta') {
         const delta = typeof payload.delta === 'string' ? payload.delta : '';
-        if (delta) { outputTextParts.push(delta); observer.onTextDelta?.(delta); }
+        if (delta) {
+          outputTextParts.push(delta);
+          observer.onTextDelta?.(delta);
+        }
       } else if (
         type === 'response.reasoning_summary_text.delta' ||
         type === 'response.reasoning_text.delta'
       ) {
         const delta = typeof payload.delta === 'string' ? payload.delta : '';
-        if (delta) { reasoningParts.push(delta); observer.onReasoningDelta?.(delta); }
+        if (delta) {
+          reasoningParts.push(delta);
+          observer.onReasoningDelta?.(delta);
+        }
       } else if (
         type === 'response.reasoning_summary_text.done' ||
         type === 'response.reasoning_text.done'
@@ -2996,12 +3216,22 @@ class OpenAICodexProviderClient implements ProviderClient {
         const item = payload.item;
         // Both standard function_call and custom_tool_call items
         if (item.type === 'function_call' || item.type === 'custom_tool_call') {
-          const callId = typeof item.call_id === 'string' ? item.call_id : typeof item.id === 'string' ? item.id : '';
+          const callId =
+            typeof item.call_id === 'string'
+              ? item.call_id
+              : typeof item.id === 'string'
+                ? item.id
+                : '';
           const name = typeof item.name === 'string' ? item.name : '';
           // For output_item.done the arguments/input may already be complete
-          const existingArgs = type === 'response.output_item.done'
-            ? (typeof item.arguments === 'string' ? item.arguments : typeof item.input === 'string' ? item.input : '')
-            : '';
+          const existingArgs =
+            type === 'response.output_item.done'
+              ? typeof item.arguments === 'string'
+                ? item.arguments
+                : typeof item.input === 'string'
+                  ? item.input
+                  : ''
+              : '';
           if (callId && name) {
             const existing = toolCallMap.get(callId);
             toolCallMap.set(callId, {
@@ -3020,8 +3250,11 @@ class OpenAICodexProviderClient implements ProviderClient {
       ) {
         // Both standard and custom tool call argument deltas use call_id or item_id
         const callId =
-          typeof payload.call_id === 'string' ? payload.call_id :
-          typeof payload.item_id === 'string' ? payload.item_id : '';
+          typeof payload.call_id === 'string'
+            ? payload.call_id
+            : typeof payload.item_id === 'string'
+              ? payload.item_id
+              : '';
         const delta = typeof payload.delta === 'string' ? payload.delta : '';
         if (callId && delta) {
           const tc = toolCallMap.get(callId);
@@ -3039,14 +3272,20 @@ class OpenAICodexProviderClient implements ProviderClient {
         const msg = typeof payload.message === 'string' ? payload.message : JSON.stringify(payload);
         throw new Error(`Codex error: ${msg}`);
       } else {
-        writeDebugEvent({ component: 'provider', level: 'info', message: 'codex sse unhandled', data: { type } });
+        writeDebugEvent({
+          component: 'provider',
+          level: 'info',
+          message: 'codex sse unhandled',
+          data: { type },
+        });
       }
     });
 
     // If we got a completed response with output, try to parse from it
     if (completedPayload && isRecord(completedPayload) && Array.isArray(completedPayload.output)) {
       const full = parseCodexResponsePayload(completedPayload, this.#profile.id, model, startedAt);
-      if (full.toolCalls.length > 0 || (!outputTextParts.length && full.outputText)) return restoreNames(full);
+      if (full.toolCalls.length > 0 || (!outputTextParts.length && full.outputText))
+        return restoreNames(full);
     }
 
     const outputText = outputTextParts.length > 0 ? outputTextParts.join('') : null;
@@ -3058,9 +3297,33 @@ class OpenAICodexProviderClient implements ProviderClient {
         arguments: parseJsonObject(tc.argumentsText),
       }))
       .filter((tc) => tc.name.length > 0);
-    const usage = completedPayload && isRecord(completedPayload) ? extractCodexUsage((completedPayload as Record<string, unknown>).usage) : undefined;
+    const usage =
+      completedPayload && isRecord(completedPayload)
+        ? extractCodexUsage((completedPayload as Record<string, unknown>).usage)
+        : undefined;
 
-    writeDebugEvent({ component: 'provider', level: 'info', message: 'codex stream finished', data: { profileId: this.#profile.id, model, toolCalls: toolCalls.length, hasReasoning: reasoningParts.length > 0, durationMs: Date.now() - startedAt } });
-    return restoreNames({ providerProfileId: this.#profile.id, providerType: 'openai-codex', model, outputText, outputJson: parseJsonOrNull(outputText), toolCalls, stopReason, ...(reasoningContent ? { reasoningContent } : {}), ...(usage ? { usage } : {}) });
+    writeDebugEvent({
+      component: 'provider',
+      level: 'info',
+      message: 'codex stream finished',
+      data: {
+        profileId: this.#profile.id,
+        model,
+        toolCalls: toolCalls.length,
+        hasReasoning: reasoningParts.length > 0,
+        durationMs: Date.now() - startedAt,
+      },
+    });
+    return restoreNames({
+      providerProfileId: this.#profile.id,
+      providerType: 'openai-codex',
+      model,
+      outputText,
+      outputJson: parseJsonOrNull(outputText),
+      toolCalls,
+      stopReason,
+      ...(reasoningContent ? { reasoningContent } : {}),
+      ...(usage ? { usage } : {}),
+    });
   }
 }

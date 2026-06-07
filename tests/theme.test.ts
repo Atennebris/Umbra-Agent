@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('TUI Themes', () => {
   it('exports exactly 42 theme names', async () => {
@@ -40,7 +40,23 @@ describe('TUI Themes', () => {
 
   it('all themes have required fields', async () => {
     const { THEMES, THEME_NAMES } = await import('../src/cli/tui/theme.js');
-    const required = ['frame', 'frameDim', 'accent', 'accentSoft', 'skillHighlight', 'text', 'muted', 'success', 'warning', 'danger', 'code', 'thinking', 'userBackground', 'assistantBackground', 'systemBackground'] as const;
+    const required = [
+      'frame',
+      'frameDim',
+      'accent',
+      'accentSoft',
+      'skillHighlight',
+      'text',
+      'muted',
+      'success',
+      'warning',
+      'danger',
+      'code',
+      'thinking',
+      'userBackground',
+      'assistantBackground',
+      'systemBackground',
+    ] as const;
     for (const name of THEME_NAMES) {
       const t = (THEMES as Record<string, Record<string, string>>)[name];
       for (const field of required) {
@@ -62,7 +78,7 @@ describe('Theme persistence (runtime-preferences)', () => {
 
   afterEach(() => {
     if (origHome === undefined) {
-      delete process.env.UMBRA_HOME;
+      process.env.UMBRA_HOME = undefined;
     } else {
       process.env.UMBRA_HOME = origHome;
     }
@@ -70,7 +86,9 @@ describe('Theme persistence (runtime-preferences)', () => {
   });
 
   it('setThemePreference / getThemePreference round-trip', async () => {
-    const { setThemePreference, getThemePreference } = await import('../src/core/runtime-preferences.js');
+    const { setThemePreference, getThemePreference } = await import(
+      '../src/core/runtime-preferences.js'
+    );
     expect(getThemePreference()).toBe('umbra');
     setThemePreference('dracula');
     expect(getThemePreference()).toBe('dracula');

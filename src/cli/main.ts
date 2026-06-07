@@ -159,12 +159,10 @@ export function createCli() {
     });
 
   // providers (no subcommand) → interactive menu
-  cli
-    .command('providers', 'Manage provider profiles interactively.')
-    .action(async () => {
-      const handler = await loadCliCommand('providers');
-      await handler({ action: 'interactive' });
-    });
+  cli.command('providers', 'Manage provider profiles interactively.').action(async () => {
+    const handler = await loadCliCommand('providers');
+    await handler({ action: 'interactive' });
+  });
 
   cli
     .command('providers list', 'List configured provider profiles.')
@@ -196,7 +194,10 @@ export function createCli() {
     });
 
   cli
-    .command('providers connect [type]', 'Connect via OAuth (e.g. openai-codex for ChatGPT Plus/Pro).')
+    .command(
+      'providers connect [type]',
+      'Connect via OAuth (e.g. openai-codex for ChatGPT Plus/Pro).',
+    )
     .action(async (type: string | undefined) => {
       const handler = await loadCliCommand('providers');
       await handler({ action: 'connect', provider: type });
@@ -269,12 +270,10 @@ export function createCli() {
       await handler(sub ? [sub] : []);
     });
 
-  cli
-    .command('trust list', 'List all trusted workspace paths.')
-    .action(async () => {
-      const handler = await loadCliCommand('trust');
-      await handler(['list']);
-    });
+  cli.command('trust list', 'List all trusted workspace paths.').action(async () => {
+    const handler = await loadCliCommand('trust');
+    await handler(['list']);
+  });
 
   cli
     .command('trust remove <path>', 'Remove a path from the trusted workspace list.')

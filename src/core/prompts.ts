@@ -109,9 +109,7 @@ export function buildAgentInstruction(opts: {
           `Web search enabled (${opts.webSearch.mode ?? 'cached'} mode). Use web.search for internet queries, web.fetch to read a page.`,
           'For live data (weather, prices, news) always call web.fetch on a result URL after web.search.',
         ]
-      : [
-          'Web search is off. If the user needs it, tell them to run /web to enable.',
-        ]),
+      : ['Web search is off. If the user needs it, tell them to run /web to enable.']),
     'Use tools only when they materially help with the current request.',
     'Prefer completing the requested task end-to-end instead of refusing to edit.',
     '',

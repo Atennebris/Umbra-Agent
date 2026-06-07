@@ -23,7 +23,8 @@ describe('resolveLanguage', () => {
   it('resolves csharp → c# (Codex alias)', () => expect(resolveLanguage('csharp')).toBe('c#'));
   it('resolves c-sharp → c# (Codex alias)', () => expect(resolveLanguage('c-sharp')).toBe('c#'));
   it('resolves golang → go (Codex alias)', () => expect(resolveLanguage('golang')).toBe('go'));
-  it('resolves python3 → python (Codex alias)', () => expect(resolveLanguage('python3')).toBe('python'));
+  it('resolves python3 → python (Codex alias)', () =>
+    expect(resolveLanguage('python3')).toBe('python'));
   it('resolves ts → typescript', () => expect(resolveLanguage('ts')).toBe('typescript'));
   it('resolves tsx → typescript', () => expect(resolveLanguage('tsx')).toBe('typescript'));
   it('resolves js → javascript', () => expect(resolveLanguage('js')).toBe('javascript'));
@@ -186,8 +187,7 @@ describe('diff rendering', () => {
     expect(result.lines[0]?.[0]?.type).toBe('plain');
   });
   it('diff round-trip: full hunk preserves content', () => {
-    const code =
-      '--- a/foo.ts\n+++ b/foo.ts\n@@ -1,2 +1,2 @@\n-old line\n+new line\n context';
+    const code = '--- a/foo.ts\n+++ b/foo.ts\n@@ -1,2 +1,2 @@\n-old line\n+new line\n context';
     expect(reconstruct(highlightCode(code, 'diff'))).toBe(code);
   });
   it('patch alias resolves to diff behavior', () => {

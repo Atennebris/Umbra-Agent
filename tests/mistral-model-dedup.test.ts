@@ -27,14 +27,16 @@ function makeProfile(model = 'mistral-large-latest') {
   };
 }
 
-function makeApiResponse(models: Array<{
-  id: string;
-  name?: string;
-  context_window?: number;
-  deprecation?: string | null;
-  archived?: boolean;
-  capabilities?: Record<string, boolean>;
-}>) {
+function makeApiResponse(
+  models: Array<{
+    id: string;
+    name?: string;
+    context_window?: number;
+    deprecation?: string | null;
+    archived?: boolean;
+    capabilities?: Record<string, boolean>;
+  }>,
+) {
   return JSON.stringify({
     data: models.map((m) => ({
       id: m.id,
@@ -50,18 +52,22 @@ function makeApiResponse(models: Array<{
   });
 }
 
-async function listModels(models: Array<{
-  id: string;
-  name?: string;
-  context_window?: number;
-  deprecation?: string | null;
-  archived?: boolean;
-  capabilities?: Record<string, boolean>;
-}>) {
+async function listModels(
+  models: Array<{
+    id: string;
+    name?: string;
+    context_window?: number;
+    deprecation?: string | null;
+    archived?: boolean;
+    capabilities?: Record<string, boolean>;
+  }>,
+) {
   const body = makeApiResponse(models);
-  const fetcher = vi.fn().mockResolvedValue(
-    new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }),
-  );
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
   const client = createProviderClient(makeProfile(), 'mistral', fetcher);
   return client.listModels();
 }
@@ -72,10 +78,7 @@ async function listModels(models: Array<{
 
 describe('Mistral family deduplication', () => {
   it('deduplicates -latest vs dated version into one entry', async () => {
-    const result = await listModels([
-      { id: 'mistral-large-latest' },
-      { id: 'mistral-large-2411' },
-    ]);
+    const result = await listModels([{ id: 'mistral-large-latest' }, { id: 'mistral-large-2411' }]);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('mistral-large-latest');
   });
@@ -100,10 +103,7 @@ describe('Mistral family deduplication', () => {
   });
 
   it('deduplicates mistral-medium-3 into mistral-medium family', async () => {
-    const result = await listModels([
-      { id: 'mistral-medium-latest' },
-      { id: 'mistral-medium-3' },
-    ]);
+    const result = await listModels([{ id: 'mistral-medium-latest' }, { id: 'mistral-medium-3' }]);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('mistral-medium-latest');
   });
@@ -130,10 +130,7 @@ describe('Mistral family deduplication', () => {
   });
 
   it('keeps devstral and devstral-small as separate families', async () => {
-    const result = await listModels([
-      { id: 'devstral-2512' },
-      { id: 'devstral-small-2505' },
-    ]);
+    const result = await listModels([{ id: 'devstral-2512' }, { id: 'devstral-small-2505' }]);
     expect(result).toHaveLength(2);
   });
 
@@ -214,7 +211,9 @@ describe('Mistral family deduplication', () => {
 
 describe('Mistral display name formatting', () => {
   it('formats magistral-small-latest → Magistral Small (Latest)', async () => {
-    const result = await listModels([{ id: 'magistral-small-latest', name: 'magistral-small-latest' }]);
+    const result = await listModels([
+      { id: 'magistral-small-latest', name: 'magistral-small-latest' },
+    ]);
     expect(result[0].name).toBe('Magistral Small (Latest)');
   });
 

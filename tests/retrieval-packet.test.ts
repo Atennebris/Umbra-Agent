@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SEARCH_COMPRESS_THRESHOLD_TOKENS,
   compressSearchFilesOutput,
   compressSearchRgOutput,
   formatContextPacket,
   maybeCompressSearchResult,
-  SEARCH_COMPRESS_THRESHOLD_TOKENS,
 } from '../src/context/retrieval-packet.js';
 
 // ─── compressSearchRgOutput ────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ describe('compressSearchRgOutput', () => {
 
   it('marks binary files and does not include their snippet in model context', () => {
     // Binary content: contains null bytes (charCode 0)
-    const binarySnippet = 'prefix' + String.fromCharCode(0, 1, 2) + 'suffix';
+    const binarySnippet = `prefix${String.fromCharCode(0, 1, 2)}suffix`;
     const output = {
       pattern: 'anything',
       totalMatchCount: 1,
@@ -268,9 +268,7 @@ describe('maybeCompressSearchResult', () => {
   });
 
   it('returns null for failed results', () => {
-    expect(
-      maybeCompressSearchResult('search.rg', { status: 'failed' }, 2000),
-    ).toBeNull();
+    expect(maybeCompressSearchResult('search.rg', { status: 'failed' }, 2000)).toBeNull();
   });
 
   it('returns null when result is below compression threshold', () => {
@@ -320,7 +318,7 @@ describe('maybeCompressSearchResult', () => {
     );
 
     expect(result).not.toBeNull();
-    const parsed = JSON.parse(result!) as {
+    const parsed = JSON.parse(result as string) as {
       status: string;
       _compressed: boolean;
       output: { source: string; entries: unknown[] };

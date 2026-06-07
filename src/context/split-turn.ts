@@ -1,5 +1,5 @@
-import { estimateJsonTokens } from './token-estimator.js';
 import type { ProviderChatMessage } from '../providers/index.js';
+import { estimateJsonTokens } from './token-estimator.js';
 
 export type SplitTurnResult = {
   messages: ProviderChatMessage[];
@@ -52,7 +52,7 @@ function buildPrefixSummary(pairs: ToolPair[]): string {
         const status = typeof parsed.status === 'string' ? parsed.status : 'done';
         lines.push(`  → ${status}`);
       } catch {
-        lines.push(`  → done`);
+        lines.push('  → done');
       }
     }
   }
@@ -118,12 +118,14 @@ export function applySplitTurn(
   }
 
   const currentUserMsg = body[lastUserIdx] as ProviderChatMessage;
-  const oldHistory = body.slice(0, lastUserIdx).filter((m): m is ProviderChatMessage => m !== undefined);
+  const oldHistory = body
+    .slice(0, lastUserIdx)
+    .filter((m): m is ProviderChatMessage => m !== undefined);
 
   // core = system + currentUser + summary + tail (everything we must keep)
   const coreSize = (systemMsg ? 1 : 0) + 1 + 1 + tailMsgs.length;
 
-  let result: ProviderChatMessage[] = [
+  const result: ProviderChatMessage[] = [
     ...(systemMsg ? [systemMsg] : []),
     ...oldHistory,
     currentUserMsg,

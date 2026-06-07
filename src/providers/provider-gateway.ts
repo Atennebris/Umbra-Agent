@@ -1,10 +1,6 @@
 import { writeDebugEvent } from '../debug/runtime-debug.js';
 import { getUsageLogger } from '../memory/usage-log.js';
-import {
-  type CompressionLevel,
-  compressToolOutput,
-  condenseProse,
-} from '../utils/compression.js';
+import { type CompressionLevel, compressToolOutput, condenseProse } from '../utils/compression.js';
 import type { ProviderCatalog } from './index.js';
 import type { ModelsRegistry } from './models-registry.js';
 import { type FetchLike, createProviderClient } from './provider-client.js';
@@ -72,7 +68,14 @@ export class DefaultProviderGateway implements ProviderGateway {
       throw new Error('Gateway: either profileId or chainId must be provided.');
     }
 
-    return this.#executeSingle(profileId, preparedRequest, requestId, undefined, sessionId, threadId);
+    return this.#executeSingle(
+      profileId,
+      preparedRequest,
+      requestId,
+      undefined,
+      sessionId,
+      threadId,
+    );
   }
 
   async completeStream(
@@ -100,7 +103,15 @@ export class DefaultProviderGateway implements ProviderGateway {
       throw new Error('Gateway: either profileId or chainId must be provided.');
     }
 
-    return this.#executeSingleStream(profileId, preparedRequest, observer, requestId, undefined, sessionId, threadId);
+    return this.#executeSingleStream(
+      profileId,
+      preparedRequest,
+      observer,
+      requestId,
+      undefined,
+      sessionId,
+      threadId,
+    );
   }
 
   async #executeSingle(
@@ -278,7 +289,8 @@ export class DefaultProviderGateway implements ProviderGateway {
       (m) => m.role === 'assistant' && !m.reasoningContent,
     ).length;
 
-    const thinkBudget = (request as ProviderCompleteRequest & { thinkBudget?: unknown }).thinkBudget;
+    const thinkBudget = (request as ProviderCompleteRequest & { thinkBudget?: unknown })
+      .thinkBudget;
     writeDebugEvent({
       component: 'provider',
       level: 'info',

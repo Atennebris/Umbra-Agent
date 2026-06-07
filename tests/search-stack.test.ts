@@ -7,9 +7,7 @@ import { executeToolCall } from '../src/tools/index.js';
 const createdDirs: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(
-    createdDirs.splice(0).map((d) => fs.rm(d, { recursive: true, force: true })),
-  );
+  await Promise.all(createdDirs.splice(0).map((d) => fs.rm(d, { recursive: true, force: true })));
 });
 
 async function makeWorkspace(prefix: string): Promise<string> {
@@ -42,8 +40,8 @@ describe('search.rg grouped output', () => {
     expect(out.fileBuckets.length).toBeGreaterThanOrEqual(1);
     const alphaB = out.fileBuckets.find((b) => b.file.includes('alpha'));
     expect(alphaB).toBeDefined();
-    expect(alphaB!.matchCount).toBeGreaterThanOrEqual(2);
-    expect(alphaB!.snippets.length).toBeGreaterThanOrEqual(2);
+    expect(alphaB?.matchCount).toBeGreaterThanOrEqual(2);
+    expect(alphaB?.snippets.length).toBeGreaterThanOrEqual(2);
     expect(out.truncatedFiles).toBe(false);
   });
 
@@ -68,7 +66,7 @@ describe('search.rg grouped output', () => {
       }>;
     };
     expect(out.fileBuckets.length).toBe(1);
-    const snippet = out.fileBuckets[0]!.snippets[0]!;
+    const snippet = out.fileBuckets[0]?.snippets[0]!;
     if (out.engine === 'rg') {
       expect(snippet.contextBefore.length + snippet.contextAfter.length).toBeGreaterThan(0);
     } else {
@@ -154,7 +152,10 @@ describe('search.files ignore rules', () => {
     });
 
     expect(result.status).toBe('completed');
-    const out = result.output as { files: Array<{ path: string; kind: string }>; truncated: boolean };
+    const out = result.output as {
+      files: Array<{ path: string; kind: string }>;
+      truncated: boolean;
+    };
     const names = out.files.map((f) => path.basename(f.path));
     expect(names).toContain('main.ts');
     expect(names).toContain('readme.md');
@@ -274,7 +275,9 @@ describe('search.fuzzy ranking', () => {
     const runnerResult = out.results.find((r) => r.path.includes('runner.ts'));
     expect(runnerResult).toBeDefined();
     if (out.results.length > 1) {
-      expect(runnerResult!.score).toBeGreaterThanOrEqual(out.results[out.results.length - 1]!.score);
+      expect(runnerResult?.score).toBeGreaterThanOrEqual(
+        out.results[out.results.length - 1]?.score,
+      );
     }
   });
 

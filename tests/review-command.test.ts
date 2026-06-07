@@ -12,20 +12,20 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { ReviewResult } from '../src/core/contracts.js';
 import { HttpGateway } from '../src/core/http-gateway.js';
 import type { TextEmbedder } from '../src/memory/embeddings.js';
 import { resetMemoryManagerForTests, setMemoryManagerForTests } from '../src/memory/index.js';
 import { MemoryManager } from '../src/memory/manager.js';
 import {
+  DefaultProviderCatalog,
+  ModelsRegistry,
   type ProviderCatalog,
   type ProviderCompleteRequest,
   type ProviderCompleteResponse,
-  DefaultProviderCatalog,
-  ModelsRegistry,
   resetProviderCatalogForTests,
   setProviderCatalogForTests,
 } from '../src/providers/index.js';
-import type { ReviewResult } from '../src/core/contracts.js';
 
 let gateway: HttpGateway | null = null;
 const createdDirs: string[] = [];
@@ -42,7 +42,7 @@ afterEach(async () => {
   if (originalUmbraHome !== undefined) {
     process.env.UMBRA_HOME = originalUmbraHome;
   } else {
-    delete process.env.UMBRA_HOME;
+    process.env.UMBRA_HOME = undefined;
   }
   await Promise.all(
     createdDirs.splice(0).map(async (d) => {
@@ -224,7 +224,9 @@ describe('/review settings round-trip', () => {
   });
 
   it('saves custom provider and model, reads them back', async () => {
-    const { setReviewSettings, getReviewSettings } = await import('../src/core/runtime-preferences.js');
+    const { setReviewSettings, getReviewSettings } = await import(
+      '../src/core/runtime-preferences.js'
+    );
     setReviewSettings('my-review-provider', 'review-model-v1');
     const s = getReviewSettings();
     expect(s.provider).toBe('my-review-provider');
@@ -241,7 +243,9 @@ describe('/review settings round-trip', () => {
   });
 
   it('resets to Default when called with null/null', async () => {
-    const { setReviewSettings, getReviewSettings } = await import('../src/core/runtime-preferences.js');
+    const { setReviewSettings, getReviewSettings } = await import(
+      '../src/core/runtime-preferences.js'
+    );
     setReviewSettings('old-provider', 'old-model');
     setReviewSettings(null, null);
     const s = getReviewSettings();
@@ -250,7 +254,9 @@ describe('/review settings round-trip', () => {
   });
 
   it('preserves other runtime prefs when review settings change', async () => {
-    const { setReviewSettings, setDefaultRuntimeMode, readRuntimePreferences } = await import('../src/core/runtime-preferences.js');
+    const { setReviewSettings, setDefaultRuntimeMode, readRuntimePreferences } = await import(
+      '../src/core/runtime-preferences.js'
+    );
     setDefaultRuntimeMode('full');
     setReviewSettings('rv-provider', 'rv-model');
     const prefs = readRuntimePreferences();
@@ -397,12 +403,14 @@ describe('POST /review — HTTP endpoint', () => {
     });
 
     // Read session events — review should NOT appear in them
-    const eventsResp = await fetch(`http://127.0.0.1:${port}/sessions/${encodeURIComponent(sessionId)}`);
+    const eventsResp = await fetch(
+      `http://127.0.0.1:${port}/sessions/${encodeURIComponent(sessionId)}`,
+    );
     const sessionEvents = (await eventsResp.json()) as Array<{ type: string }>;
     // session events could be an array or wrapped object — handle both
     const eventsArray = Array.isArray(sessionEvents)
       ? sessionEvents
-      : (sessionEvents as unknown as { events?: Array<{ type: string }> }).events ?? [];
+      : ((sessionEvents as unknown as { events?: Array<{ type: string }> }).events ?? []);
     const reviewEvents = eventsArray.filter(
       (e) => e.type === 'review' || e.type === 'review_result',
     );

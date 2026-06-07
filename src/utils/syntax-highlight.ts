@@ -76,18 +76,30 @@ const COLOR: Record<string, string> = {
 
 function colorFor(type: TokenType): string {
   switch (type) {
-    case 'keyword': return COLOR['keyword']!;
-    case 'string': return COLOR['string']!;
-    case 'comment': return COLOR['comment']!;
-    case 'number': return COLOR['number']!;
-    case 'operator': return COLOR['operator']!;
-    case 'function': return COLOR['function']!;
-    case 'type-name': return COLOR['typeName']!;
-    case 'diff-add': return COLOR['diffAdd']!;
-    case 'diff-del': return COLOR['diffDel']!;
-    case 'diff-meta': return COLOR['diffMeta']!;
-    case 'diff-header': return COLOR['diffHead']!;
-    case 'plain': return COLOR['plain']!;
+    case 'keyword':
+      return COLOR.keyword!;
+    case 'string':
+      return COLOR.string!;
+    case 'comment':
+      return COLOR.comment!;
+    case 'number':
+      return COLOR.number!;
+    case 'operator':
+      return COLOR.operator!;
+    case 'function':
+      return COLOR.function!;
+    case 'type-name':
+      return COLOR.typeName!;
+    case 'diff-add':
+      return COLOR.diffAdd!;
+    case 'diff-del':
+      return COLOR.diffDel!;
+    case 'diff-meta':
+      return COLOR.diffMeta!;
+    case 'diff-header':
+      return COLOR.diffHead!;
+    case 'plain':
+      return COLOR.plain!;
   }
 }
 
@@ -95,93 +107,520 @@ function colorFor(type: TokenType): string {
 
 const KEYWORDS: Record<string, string[]> = {
   javascript: [
-    'const', 'let', 'var', 'function', 'return', 'if', 'else', 'class',
-    'import', 'export', 'default', 'async', 'await', 'for', 'while', 'do',
-    'break', 'continue', 'typeof', 'instanceof', 'new', 'delete', 'this',
-    'super', 'null', 'undefined', 'true', 'false', 'try', 'catch', 'finally',
-    'throw', 'switch', 'case', 'of', 'in', 'from', 'extends', 'static',
-    'yield', 'void', 'with', 'debugger',
+    'const',
+    'let',
+    'var',
+    'function',
+    'return',
+    'if',
+    'else',
+    'class',
+    'import',
+    'export',
+    'default',
+    'async',
+    'await',
+    'for',
+    'while',
+    'do',
+    'break',
+    'continue',
+    'typeof',
+    'instanceof',
+    'new',
+    'delete',
+    'this',
+    'super',
+    'null',
+    'undefined',
+    'true',
+    'false',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'switch',
+    'case',
+    'of',
+    'in',
+    'from',
+    'extends',
+    'static',
+    'yield',
+    'void',
+    'with',
+    'debugger',
   ],
   typescript: [
-    'const', 'let', 'var', 'function', 'return', 'if', 'else', 'class',
-    'import', 'export', 'default', 'async', 'await', 'for', 'while', 'do',
-    'break', 'continue', 'typeof', 'instanceof', 'new', 'delete', 'this',
-    'super', 'null', 'undefined', 'true', 'false', 'try', 'catch', 'finally',
-    'throw', 'switch', 'case', 'of', 'in', 'from', 'extends', 'static',
-    'yield', 'void', 'with', 'debugger',
-    'type', 'interface', 'enum', 'readonly', 'abstract', 'implements',
-    'namespace', 'declare', 'as', 'keyof', 'never', 'unknown', 'any',
-    'string', 'number', 'boolean', 'object', 'symbol',
-    'public', 'private', 'protected', 'override', 'satisfies',
+    'const',
+    'let',
+    'var',
+    'function',
+    'return',
+    'if',
+    'else',
+    'class',
+    'import',
+    'export',
+    'default',
+    'async',
+    'await',
+    'for',
+    'while',
+    'do',
+    'break',
+    'continue',
+    'typeof',
+    'instanceof',
+    'new',
+    'delete',
+    'this',
+    'super',
+    'null',
+    'undefined',
+    'true',
+    'false',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'switch',
+    'case',
+    'of',
+    'in',
+    'from',
+    'extends',
+    'static',
+    'yield',
+    'void',
+    'with',
+    'debugger',
+    'type',
+    'interface',
+    'enum',
+    'readonly',
+    'abstract',
+    'implements',
+    'namespace',
+    'declare',
+    'as',
+    'keyof',
+    'never',
+    'unknown',
+    'any',
+    'string',
+    'number',
+    'boolean',
+    'object',
+    'symbol',
+    'public',
+    'private',
+    'protected',
+    'override',
+    'satisfies',
   ],
   python: [
-    'def', 'class', 'return', 'if', 'elif', 'else', 'for', 'while', 'import',
-    'from', 'as', 'with', 'try', 'except', 'finally', 'lambda', 'None',
-    'True', 'False', 'and', 'or', 'not', 'in', 'is', 'pass', 'break',
-    'continue', 'raise', 'yield', 'global', 'nonlocal', 'del', 'assert',
-    'async', 'await', 'match', 'case',
+    'def',
+    'class',
+    'return',
+    'if',
+    'elif',
+    'else',
+    'for',
+    'while',
+    'import',
+    'from',
+    'as',
+    'with',
+    'try',
+    'except',
+    'finally',
+    'lambda',
+    'None',
+    'True',
+    'False',
+    'and',
+    'or',
+    'not',
+    'in',
+    'is',
+    'pass',
+    'break',
+    'continue',
+    'raise',
+    'yield',
+    'global',
+    'nonlocal',
+    'del',
+    'assert',
+    'async',
+    'await',
+    'match',
+    'case',
   ],
   bash: [
-    'if', 'then', 'else', 'fi', 'for', 'do', 'done', 'while', 'case',
-    'esac', 'function', 'echo', 'export', 'local', 'source', 'return',
-    'exit', 'in', 'select', 'until', 'read', 'declare', 'unset', 'shift',
-    'break', 'continue',
+    'if',
+    'then',
+    'else',
+    'fi',
+    'for',
+    'do',
+    'done',
+    'while',
+    'case',
+    'esac',
+    'function',
+    'echo',
+    'export',
+    'local',
+    'source',
+    'return',
+    'exit',
+    'in',
+    'select',
+    'until',
+    'read',
+    'declare',
+    'unset',
+    'shift',
+    'break',
+    'continue',
   ],
   go: [
-    'func', 'type', 'struct', 'interface', 'var', 'const', 'if', 'else',
-    'for', 'range', 'return', 'import', 'package', 'defer', 'go', 'chan',
-    'map', 'nil', 'true', 'false', 'switch', 'case', 'default', 'break',
-    'continue', 'fallthrough', 'goto', 'select', 'make', 'new', 'append',
-    'len', 'cap', 'delete', 'close', 'copy', 'recover', 'panic',
+    'func',
+    'type',
+    'struct',
+    'interface',
+    'var',
+    'const',
+    'if',
+    'else',
+    'for',
+    'range',
+    'return',
+    'import',
+    'package',
+    'defer',
+    'go',
+    'chan',
+    'map',
+    'nil',
+    'true',
+    'false',
+    'switch',
+    'case',
+    'default',
+    'break',
+    'continue',
+    'fallthrough',
+    'goto',
+    'select',
+    'make',
+    'new',
+    'append',
+    'len',
+    'cap',
+    'delete',
+    'close',
+    'copy',
+    'recover',
+    'panic',
   ],
   rust: [
-    'fn', 'struct', 'impl', 'trait', 'enum', 'let', 'mut', 'use', 'pub',
-    'mod', 'if', 'else', 'for', 'while', 'match', 'return', 'async', 'await',
-    'move', 'where', 'type', 'const', 'static', 'ref', 'in', 'loop',
-    'break', 'continue', 'crate', 'super', 'self', 'Self', 'true', 'false',
-    'as', 'dyn', 'extern', 'unsafe', 'box',
+    'fn',
+    'struct',
+    'impl',
+    'trait',
+    'enum',
+    'let',
+    'mut',
+    'use',
+    'pub',
+    'mod',
+    'if',
+    'else',
+    'for',
+    'while',
+    'match',
+    'return',
+    'async',
+    'await',
+    'move',
+    'where',
+    'type',
+    'const',
+    'static',
+    'ref',
+    'in',
+    'loop',
+    'break',
+    'continue',
+    'crate',
+    'super',
+    'self',
+    'Self',
+    'true',
+    'false',
+    'as',
+    'dyn',
+    'extern',
+    'unsafe',
+    'box',
   ],
   java: [
-    'class', 'interface', 'extends', 'implements', 'public', 'private',
-    'protected', 'static', 'final', 'void', 'return', 'if', 'else', 'for',
-    'while', 'do', 'import', 'package', 'new', 'this', 'super', 'try',
-    'catch', 'finally', 'throw', 'throws', 'abstract', 'synchronized',
-    'instanceof', 'null', 'true', 'false', 'boolean', 'int', 'long',
-    'double', 'float', 'char', 'byte', 'short', 'switch', 'case', 'break',
-    'continue', 'enum', 'default', 'record', 'sealed', 'permits',
+    'class',
+    'interface',
+    'extends',
+    'implements',
+    'public',
+    'private',
+    'protected',
+    'static',
+    'final',
+    'void',
+    'return',
+    'if',
+    'else',
+    'for',
+    'while',
+    'do',
+    'import',
+    'package',
+    'new',
+    'this',
+    'super',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'throws',
+    'abstract',
+    'synchronized',
+    'instanceof',
+    'null',
+    'true',
+    'false',
+    'boolean',
+    'int',
+    'long',
+    'double',
+    'float',
+    'char',
+    'byte',
+    'short',
+    'switch',
+    'case',
+    'break',
+    'continue',
+    'enum',
+    'default',
+    'record',
+    'sealed',
+    'permits',
   ],
   'c#': [
-    'class', 'interface', 'struct', 'enum', 'namespace', 'using', 'public',
-    'private', 'protected', 'internal', 'static', 'readonly', 'const',
-    'void', 'return', 'if', 'else', 'for', 'foreach', 'while', 'do',
-    'new', 'this', 'base', 'try', 'catch', 'finally', 'throw', 'abstract',
-    'virtual', 'override', 'sealed', 'null', 'true', 'false', 'var',
-    'async', 'await', 'get', 'set', 'value', 'typeof', 'is', 'as',
-    'bool', 'int', 'long', 'double', 'float', 'string', 'object', 'dynamic',
-    'switch', 'case', 'break', 'continue', 'default', 'delegate', 'event',
-    'in', 'out', 'ref', 'params', 'where', 'record', 'init',
+    'class',
+    'interface',
+    'struct',
+    'enum',
+    'namespace',
+    'using',
+    'public',
+    'private',
+    'protected',
+    'internal',
+    'static',
+    'readonly',
+    'const',
+    'void',
+    'return',
+    'if',
+    'else',
+    'for',
+    'foreach',
+    'while',
+    'do',
+    'new',
+    'this',
+    'base',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'abstract',
+    'virtual',
+    'override',
+    'sealed',
+    'null',
+    'true',
+    'false',
+    'var',
+    'async',
+    'await',
+    'get',
+    'set',
+    'value',
+    'typeof',
+    'is',
+    'as',
+    'bool',
+    'int',
+    'long',
+    'double',
+    'float',
+    'string',
+    'object',
+    'dynamic',
+    'switch',
+    'case',
+    'break',
+    'continue',
+    'default',
+    'delegate',
+    'event',
+    'in',
+    'out',
+    'ref',
+    'params',
+    'where',
+    'record',
+    'init',
   ],
   cpp: [
-    'class', 'struct', 'enum', 'namespace', 'template', 'typename', 'public',
-    'private', 'protected', 'virtual', 'override', 'final', 'const', 'static',
-    'void', 'return', 'if', 'else', 'for', 'while', 'do', 'new', 'delete',
-    'this', 'try', 'catch', 'throw', 'nullptr', 'true', 'false', 'auto',
-    'using', 'inline', 'explicit', 'mutable', 'volatile', 'operator',
-    'switch', 'case', 'break', 'continue', 'default', 'sizeof', 'alignof',
-    'decltype', 'constexpr', 'noexcept', 'friend', 'typedef', 'int', 'long',
-    'char', 'bool', 'double', 'float', 'unsigned', 'short',
+    'class',
+    'struct',
+    'enum',
+    'namespace',
+    'template',
+    'typename',
+    'public',
+    'private',
+    'protected',
+    'virtual',
+    'override',
+    'final',
+    'const',
+    'static',
+    'void',
+    'return',
+    'if',
+    'else',
+    'for',
+    'while',
+    'do',
+    'new',
+    'delete',
+    'this',
+    'try',
+    'catch',
+    'throw',
+    'nullptr',
+    'true',
+    'false',
+    'auto',
+    'using',
+    'inline',
+    'explicit',
+    'mutable',
+    'volatile',
+    'operator',
+    'switch',
+    'case',
+    'break',
+    'continue',
+    'default',
+    'sizeof',
+    'alignof',
+    'decltype',
+    'constexpr',
+    'noexcept',
+    'friend',
+    'typedef',
+    'int',
+    'long',
+    'char',
+    'bool',
+    'double',
+    'float',
+    'unsigned',
+    'short',
   ],
   sql: [
-    'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET',
-    'DELETE', 'CREATE', 'TABLE', 'INDEX', 'VIEW', 'DROP', 'ALTER', 'ADD',
-    'COLUMN', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'CROSS',
-    'ON', 'AND', 'OR', 'NOT', 'IN', 'IS', 'NULL', 'AS', 'ORDER', 'BY',
-    'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'DISTINCT', 'COUNT', 'SUM',
-    'AVG', 'MAX', 'MIN', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES',
-    'DEFAULT', 'CONSTRAINT', 'TRUNCATE', 'BEGIN', 'COMMIT', 'ROLLBACK',
-    'TRANSACTION', 'PROCEDURE', 'FUNCTION', 'TRIGGER', 'CASCADE', 'UNIQUE',
-    'CHECK', 'UNION', 'ALL', 'EXCEPT', 'INTERSECT', 'CASE', 'WHEN', 'THEN',
-    'ELSE', 'END', 'LIKE', 'BETWEEN', 'EXISTS', 'COALESCE', 'NULLIF',
+    'SELECT',
+    'FROM',
+    'WHERE',
+    'INSERT',
+    'INTO',
+    'VALUES',
+    'UPDATE',
+    'SET',
+    'DELETE',
+    'CREATE',
+    'TABLE',
+    'INDEX',
+    'VIEW',
+    'DROP',
+    'ALTER',
+    'ADD',
+    'COLUMN',
+    'JOIN',
+    'LEFT',
+    'RIGHT',
+    'INNER',
+    'OUTER',
+    'FULL',
+    'CROSS',
+    'ON',
+    'AND',
+    'OR',
+    'NOT',
+    'IN',
+    'IS',
+    'NULL',
+    'AS',
+    'ORDER',
+    'BY',
+    'GROUP',
+    'HAVING',
+    'LIMIT',
+    'OFFSET',
+    'DISTINCT',
+    'COUNT',
+    'SUM',
+    'AVG',
+    'MAX',
+    'MIN',
+    'PRIMARY',
+    'KEY',
+    'FOREIGN',
+    'REFERENCES',
+    'DEFAULT',
+    'CONSTRAINT',
+    'TRUNCATE',
+    'BEGIN',
+    'COMMIT',
+    'ROLLBACK',
+    'TRANSACTION',
+    'PROCEDURE',
+    'FUNCTION',
+    'TRIGGER',
+    'CASCADE',
+    'UNIQUE',
+    'CHECK',
+    'UNION',
+    'ALL',
+    'EXCEPT',
+    'INTERSECT',
+    'CASE',
+    'WHEN',
+    'THEN',
+    'ELSE',
+    'END',
+    'LIKE',
+    'BETWEEN',
+    'EXISTS',
+    'COALESCE',
+    'NULLIF',
   ],
 };
 
@@ -191,7 +630,11 @@ type CommentStyle = 'slash' | 'hash' | 'sql' | 'none';
 
 type TokenRule = { re: RegExp; type: TokenType };
 
-function makeRules(langKeywords: string[], commentStyle: CommentStyle, caseInsensitive = false): TokenRule[] {
+function makeRules(
+  langKeywords: string[],
+  commentStyle: CommentStyle,
+  caseInsensitive = false,
+): TokenRule[] {
   const flags = caseInsensitive ? 'iy' : 'y';
   const rules: TokenRule[] = [];
 
@@ -234,26 +677,59 @@ function makeRules(langKeywords: string[], commentStyle: CommentStyle, caseInsen
 const rulesCache = new Map<string, TokenRule[]>();
 
 type LangFamily =
-  | 'jsts' | 'python' | 'bash' | 'go' | 'rust'
-  | 'java' | 'csharp' | 'cpp' | 'css' | 'json'
-  | 'yaml' | 'sql' | 'diff' | 'generic';
+  | 'jsts'
+  | 'python'
+  | 'bash'
+  | 'go'
+  | 'rust'
+  | 'java'
+  | 'csharp'
+  | 'cpp'
+  | 'css'
+  | 'json'
+  | 'yaml'
+  | 'sql'
+  | 'diff'
+  | 'generic';
 
 function getLangFamily(lang: string): LangFamily {
   switch (lang) {
-    case 'javascript': case 'typescript': return 'jsts';
-    case 'python': case 'ruby': return 'python';
-    case 'bash': return 'bash';
-    case 'go': return 'go';
-    case 'rust': return 'rust';
-    case 'java': case 'kotlin': case 'scala': return 'java';
-    case 'c#': return 'csharp';
-    case 'c': case 'cpp': return 'cpp';
-    case 'css': case 'scss': case 'sass': return 'css';
-    case 'json': return 'json';
-    case 'yaml': return 'yaml';
-    case 'sql': return 'sql';
-    case 'diff': case 'patch': return 'diff';
-    default: return 'generic';
+    case 'javascript':
+    case 'typescript':
+      return 'jsts';
+    case 'python':
+    case 'ruby':
+      return 'python';
+    case 'bash':
+      return 'bash';
+    case 'go':
+      return 'go';
+    case 'rust':
+      return 'rust';
+    case 'java':
+    case 'kotlin':
+    case 'scala':
+      return 'java';
+    case 'c#':
+      return 'csharp';
+    case 'c':
+    case 'cpp':
+      return 'cpp';
+    case 'css':
+    case 'scss':
+    case 'sass':
+      return 'css';
+    case 'json':
+      return 'json';
+    case 'yaml':
+      return 'yaml';
+    case 'sql':
+      return 'sql';
+    case 'diff':
+    case 'patch':
+      return 'diff';
+    default:
+      return 'generic';
   }
 }
 
@@ -262,23 +738,23 @@ function buildRulesForLang(lang: string): TokenRule[] {
   switch (family) {
     case 'jsts':
       return makeRules(
-        lang === 'typescript' ? KEYWORDS['typescript']! : KEYWORDS['javascript']!,
+        lang === 'typescript' ? KEYWORDS.typescript! : KEYWORDS.javascript!,
         'slash',
       );
     case 'python':
-      return makeRules(KEYWORDS['python']!, 'hash');
+      return makeRules(KEYWORDS.python!, 'hash');
     case 'bash':
-      return makeRules(KEYWORDS['bash']!, 'hash');
+      return makeRules(KEYWORDS.bash!, 'hash');
     case 'go':
-      return makeRules(KEYWORDS['go']!, 'slash');
+      return makeRules(KEYWORDS.go!, 'slash');
     case 'rust':
-      return makeRules(KEYWORDS['rust']!, 'slash');
+      return makeRules(KEYWORDS.rust!, 'slash');
     case 'java':
-      return makeRules(KEYWORDS['java']!, 'slash');
+      return makeRules(KEYWORDS.java!, 'slash');
     case 'csharp':
       return makeRules(KEYWORDS['c#']!, 'slash');
     case 'cpp':
-      return makeRules(KEYWORDS['cpp']!, 'slash');
+      return makeRules(KEYWORDS.cpp!, 'slash');
     case 'css':
       return makeRules([], 'slash');
     case 'json':
@@ -286,7 +762,7 @@ function buildRulesForLang(lang: string): TokenRule[] {
     case 'yaml':
       return makeRules([], 'hash');
     case 'sql':
-      return makeRules(KEYWORDS['sql']!, 'sql', true);
+      return makeRules(KEYWORDS.sql!, 'sql', true);
     default:
       return [];
   }
@@ -309,7 +785,7 @@ function tokenizeLine(line: string, rules: TokenRule[]): HighlightLine {
 
   function flushPlain(end: number): void {
     if (plainStart >= 0 && plainStart < end) {
-      tokens.push({ text: line.slice(plainStart, end), color: COLOR['plain']!, type: 'plain' });
+      tokens.push({ text: line.slice(plainStart, end), color: COLOR.plain!, type: 'plain' });
       plainStart = -1;
     }
   }
@@ -336,7 +812,7 @@ function tokenizeLine(line: string, rules: TokenRule[]): HighlightLine {
 
   // Empty line → single empty plain token so callers always get at least one token
   if (tokens.length === 0) {
-    tokens.push({ text: '', color: COLOR['plain']!, type: 'plain' });
+    tokens.push({ text: '', color: COLOR.plain!, type: 'plain' });
   }
   return tokens;
 }
@@ -357,16 +833,16 @@ function tokenizeDiff(code: string): HighlightLine[] {
     if (line.startsWith('@@')) {
       return [{ text: line, color: colorFor('diff-meta'), type: 'diff-meta' }];
     }
-    return [{ text: line, color: COLOR['plain']!, type: 'plain' }];
+    return [{ text: line, color: COLOR.plain!, type: 'plain' }];
   });
 }
 
 // -- Plain text helper ---------------------------------------------------------
 
 function makePlainResult(code: string, lang: string): HighlightResult {
-  const lines = code.split('\n').map((line): HighlightLine => [
-    { text: line, color: COLOR['plain']!, type: 'plain' },
-  ]);
+  const lines = code
+    .split('\n')
+    .map((line): HighlightLine => [{ text: line, color: COLOR.plain!, type: 'plain' }]);
   return { lines, language: lang, fallback: true };
 }
 

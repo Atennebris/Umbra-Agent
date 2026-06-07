@@ -181,9 +181,39 @@ describe('Usage comparison and reporting (§8.4)', () => {
   it('getStatsByModel groups records by model', async () => {
     const { logger } = await makeTempLogger();
 
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r1', profileId: 'anthropic', model: 'claude-3-opus', inputTokens: 1000, outputTokens: 200, totalTokens: 1200, costEstimate: 0.024, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r2', profileId: 'anthropic', model: 'claude-3-opus', inputTokens: 500, outputTokens: 100, totalTokens: 600, costEstimate: 0.012, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r3', profileId: 'openai', model: 'gpt-4', inputTokens: 800, outputTokens: 150, totalTokens: 950, costEstimate: 0.03, status: 'success' });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r1',
+      profileId: 'anthropic',
+      model: 'claude-3-opus',
+      inputTokens: 1000,
+      outputTokens: 200,
+      totalTokens: 1200,
+      costEstimate: 0.024,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r2',
+      profileId: 'anthropic',
+      model: 'claude-3-opus',
+      inputTokens: 500,
+      outputTokens: 100,
+      totalTokens: 600,
+      costEstimate: 0.012,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r3',
+      profileId: 'openai',
+      model: 'gpt-4',
+      inputTokens: 800,
+      outputTokens: 150,
+      totalTokens: 950,
+      costEstimate: 0.03,
+      status: 'success',
+    });
 
     const byModel = logger.getStatsByModel();
 
@@ -205,9 +235,39 @@ describe('Usage comparison and reporting (§8.4)', () => {
   it('getStatsByProvider groups records by profileId', async () => {
     const { logger } = await makeTempLogger();
 
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r1', profileId: 'anthropic-profile', model: 'claude-3-opus', inputTokens: 1000, outputTokens: 200, totalTokens: 1200, costEstimate: 0.024, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r2', profileId: 'openai-profile', model: 'gpt-4', inputTokens: 500, outputTokens: 100, totalTokens: 600, costEstimate: 0.02, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r3', profileId: 'anthropic-profile', model: 'claude-3-haiku', inputTokens: 200, outputTokens: 50, totalTokens: 250, costEstimate: 0.001, status: 'success' });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r1',
+      profileId: 'anthropic-profile',
+      model: 'claude-3-opus',
+      inputTokens: 1000,
+      outputTokens: 200,
+      totalTokens: 1200,
+      costEstimate: 0.024,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r2',
+      profileId: 'openai-profile',
+      model: 'gpt-4',
+      inputTokens: 500,
+      outputTokens: 100,
+      totalTokens: 600,
+      costEstimate: 0.02,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r3',
+      profileId: 'anthropic-profile',
+      model: 'claude-3-haiku',
+      inputTokens: 200,
+      outputTokens: 50,
+      totalTokens: 250,
+      costEstimate: 0.001,
+      status: 'success',
+    });
 
     const byProvider = logger.getStatsByProvider();
 
@@ -224,10 +284,52 @@ describe('Usage comparison and reporting (§8.4)', () => {
   it('getStatsBySession groups records by sessionId', async () => {
     const { logger } = await makeTempLogger();
 
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r1', profileId: 'p1', sessionId: 'sess-A', model: 'claude-3-opus', inputTokens: 300, outputTokens: 100, totalTokens: 400, costEstimate: 0.01, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r2', profileId: 'p1', sessionId: 'sess-A', model: 'claude-3-opus', inputTokens: 200, outputTokens: 80, totalTokens: 280, costEstimate: 0.007, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r3', profileId: 'p1', sessionId: 'sess-B', model: 'claude-3-opus', inputTokens: 500, outputTokens: 150, totalTokens: 650, costEstimate: 0.015, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r4', profileId: 'p1', model: 'claude-3-opus', inputTokens: 100, outputTokens: 30, totalTokens: 130, status: 'success' });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r1',
+      profileId: 'p1',
+      sessionId: 'sess-A',
+      model: 'claude-3-opus',
+      inputTokens: 300,
+      outputTokens: 100,
+      totalTokens: 400,
+      costEstimate: 0.01,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r2',
+      profileId: 'p1',
+      sessionId: 'sess-A',
+      model: 'claude-3-opus',
+      inputTokens: 200,
+      outputTokens: 80,
+      totalTokens: 280,
+      costEstimate: 0.007,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r3',
+      profileId: 'p1',
+      sessionId: 'sess-B',
+      model: 'claude-3-opus',
+      inputTokens: 500,
+      outputTokens: 150,
+      totalTokens: 650,
+      costEstimate: 0.015,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r4',
+      profileId: 'p1',
+      model: 'claude-3-opus',
+      inputTokens: 100,
+      outputTokens: 30,
+      totalTokens: 130,
+      status: 'success',
+    });
 
     const bySess = logger.getStatsBySession();
 
@@ -235,16 +337,36 @@ describe('Usage comparison and reporting (§8.4)', () => {
     expect(Object.keys(bySess)).toContain('sess-B');
     expect(Object.keys(bySess)).toContain('no-session');
 
-    expect(bySess['sess-A']!.requests).toBe(2);
-    expect(bySess['sess-B']!.requests).toBe(1);
-    expect(bySess['no-session']!.requests).toBe(1);
+    expect(bySess['sess-A']?.requests).toBe(2);
+    expect(bySess['sess-B']?.requests).toBe(1);
+    expect(bySess['no-session']?.requests).toBe(1);
   });
 
   it('generateReport returns formatted string with totals, by-model, by-provider', async () => {
     const { logger } = await makeTempLogger();
 
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r1', profileId: 'anthropic', model: 'claude-3-opus', inputTokens: 1000, outputTokens: 200, totalTokens: 1200, costEstimate: 0.024, status: 'success' });
-    logger.log({ timestamp: new Date().toISOString(), requestId: 'r2', profileId: 'openai', model: 'gpt-4', inputTokens: 500, outputTokens: 100, totalTokens: 600, costEstimate: 0.012, status: 'success' });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r1',
+      profileId: 'anthropic',
+      model: 'claude-3-opus',
+      inputTokens: 1000,
+      outputTokens: 200,
+      totalTokens: 1200,
+      costEstimate: 0.024,
+      status: 'success',
+    });
+    logger.log({
+      timestamp: new Date().toISOString(),
+      requestId: 'r2',
+      profileId: 'openai',
+      model: 'gpt-4',
+      inputTokens: 500,
+      outputTokens: 100,
+      totalTokens: 600,
+      costEstimate: 0.012,
+      status: 'success',
+    });
 
     const report = logger.generateReport();
 

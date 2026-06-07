@@ -1,29 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { writable } from 'svelte/store'
+import { onMount } from 'svelte';
+import { writable } from 'svelte/store';
 
-  export let title = 'Umbra CLI'
-  export let host = '127.0.0.1'
+export const title = 'Umbra CLI';
+export const host = '127.0.0.1';
 
-  const sessions = writable([])
-  let status = 'stopped'
+const sessions = writable([]);
+const status = 'stopped';
 
-  async function fetchSessions() {
-    const res = await fetch('/api/sessions')
-    const data = await res.json()
-    sessions.set(data)
-  }
+async function fetchSessions() {
+  const res = await fetch('/api/sessions');
+  const data = await res.json();
+  sessions.set(data);
+}
 
-  export function selectSession(id: string) {
-    console.log('Selected:', id)
-  }
+export function selectSession(id: string) {
+  console.log('Selected:', id);
+}
 
-  export const defaultConfig = {
-    host: '127.0.0.1',
-    port: 9876,
-  }
+export const defaultConfig = {
+  host: '127.0.0.1',
+  port: 9876,
+};
 
-  onMount(fetchSessions)
+onMount(fetchSessions);
 </script>
 
 <main>

@@ -72,7 +72,10 @@ const SUPPORTED_LANGS: Record<string, string> = {
   ps1: 'powershell',
 };
 
-function detectLanguage(file: string): { language?: string; contentType: ContextPacketContentType } {
+function detectLanguage(file: string): {
+  language?: string;
+  contentType: ContextPacketContentType;
+} {
   const ext = file.split('.').pop()?.toLowerCase() ?? '';
   const language = SUPPORTED_LANGS[ext];
   return language !== undefined ? { language, contentType: 'text' } : { contentType: 'text' };
@@ -97,8 +100,7 @@ export function compressSearchRgOutput(
   maxTokens: number,
 ): ContextPacket {
   const query = typeof output.pattern === 'string' ? output.pattern : '';
-  const totalMatchCount =
-    typeof output.totalMatchCount === 'number' ? output.totalMatchCount : 0;
+  const totalMatchCount = typeof output.totalMatchCount === 'number' ? output.totalMatchCount : 0;
   const rawTruncated = Boolean(output.truncated);
 
   type FileBucket = {
@@ -108,9 +110,7 @@ export function compressSearchRgOutput(
     truncated: boolean;
   };
 
-  const fileBuckets = (
-    Array.isArray(output.fileBuckets) ? output.fileBuckets : []
-  ) as FileBucket[];
+  const fileBuckets = (Array.isArray(output.fileBuckets) ? output.fileBuckets : []) as FileBucket[];
 
   // Sort by match count descending — most relevant files first
   const sorted = [...fileBuckets].sort((a, b) => b.matchCount - a.matchCount);
@@ -237,7 +237,9 @@ export function formatContextPacket(packet: ContextPacket): string {
       lines.push(`${entry.file} [binary file — skipped]`);
     } else if (entry.snippet !== undefined) {
       const langTag = entry.language ? ` (${entry.language})` : '';
-      lines.push(`${entry.file}:${entry.line ?? 0}:${entry.column ?? 0}:${langTag} ${entry.snippet.trim()}`);
+      lines.push(
+        `${entry.file}:${entry.line ?? 0}:${entry.column ?? 0}:${langTag} ${entry.snippet.trim()}`,
+      );
     } else if (entry.matchCount !== undefined) {
       lines.push(`${entry.file} (${entry.matchCount} match(es))`);
     } else {

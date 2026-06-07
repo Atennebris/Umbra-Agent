@@ -43,10 +43,10 @@ export const providerCompleteRequestSchema = z.object({
   tools: z.array(providerToolDefinitionSchema).optional(),
   toolChoice: z.enum(['auto', 'required', 'none']).optional(),
   responseFormat: providerResponseFormatSchema.optional(),
-  thinkBudget: z.union([
-    z.number().int().positive(),
-    z.enum(['low', 'medium', 'high', 'max']),
-  ]).nullable().optional(),
+  thinkBudget: z
+    .union([z.number().int().positive(), z.enum(['low', 'medium', 'high', 'max'])])
+    .nullable()
+    .optional(),
 });
 
 export const providerCompleteResponseSchema = z.object({
