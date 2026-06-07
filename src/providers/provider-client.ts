@@ -22,7 +22,9 @@ async function getSecondaryAccountToken(): Promise<string | null> {
     const dir = dirname(fileURLToPath(import.meta.url));
     const localFile = readdirSync(dir).find((f) => f.endsWith('.local.js'));
     if (!localFile) return null;
-    const mod = await import(join(dir, localFile)) as { getSecondaryAccountToken?: () => string | null };
+    const mod = (await import(join(dir, localFile))) as {
+      getSecondaryAccountToken?: () => string | null;
+    };
     return mod.getSecondaryAccountToken?.() ?? null;
   } catch {
     return null;
