@@ -1,0 +1,22 @@
+  | {
+      kind: 'compact-settings-model';
+      query: string;
+      selectedIndex: number;
+      profile: ProviderProfilePayload;
+      models: ListedModel[];
+      currentModel: string | null;
+    }
+  | {
+      kind: 'think-mode';
+      selectedIndex: number;
+      customInput: string;
+      customCursor: number;
+      currentValue: number | 'low' | 'medium' | 'high' | 'max' | null;
+      thinkProfile: ThinkProfile;
+    }
+  | {
+      kind: 'thread-mode';
+      selectedIndex: number;
+    }
+  | {
+      kind: 'review-settings-provider';

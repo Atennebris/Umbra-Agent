@@ -1,0 +1,50 @@
+# yarn lockfile v1
+
+"@anthropic-ai/sdk@^0.24.0":
+  version "0.24.3"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.24.3.tgz"
+  integrity sha512-abc123==
+  dependencies:
+    node-fetch "^3.0.0"
+    form-data "^4.0.0"
+
+"@vscode/tree-sitter-wasm@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@vscode/tree-sitter-wasm/-/tree-sitter-wasm-0.0.3.tgz"
+  integrity sha512-xyz456==
+
+better-sqlite3@^9.4.3:
+  version "9.4.3"
+  resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-9.4.3.tgz"
+  integrity sha512-def789==
+  dependencies:
+    bindings "^1.5.0"
+    node-gyp "^10.0.0"
+
+ink@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/ink/-/ink-5.0.1.tgz"
+  integrity sha512-ghi012==
+  dependencies:
+    react "^18.0.0"
+    chalk "^5.0.0"
+
+react@^18.3.1:
+  version "18.3.1"
+  resolved "https://registry.yarnpkg.com/react/-/react-18.3.1.tgz"
+  integrity sha512-jkl345==
+
+typescript@^5.5.4:
+  version "5.5.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.5.4.tgz"
+  integrity sha512-mno678==
+
+vitest@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/vitest/-/vitest-2.0.4.tgz"
+  integrity sha512-pqr901==
+
+zod@^3.23.8:
+  version "3.23.8"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.23.8.tgz"
+  integrity sha512-stu234==

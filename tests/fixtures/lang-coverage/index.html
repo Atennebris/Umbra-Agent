@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umbra CLI Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header id="site-header">
+    <nav id="main-nav" role="navigation">
+      <a href="/" id="logo">Umbra</a>
+      <ul>
+        <li><a href="/sessions">Sessions</a></li>
+        <li><a href="/settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="app-root" role="main">
+    <article id="session-view">
+      <section id="messages" role="log" aria-live="polite">
+        <div id="message-list"></div>
+      </section>
+
+      <aside id="sidebar">
+        <form id="prompt-form">
+          <textarea id="prompt-input" placeholder="Ask Umbra..."></textarea>
+          <button id="send-btn" type="submit">Send</button>
+        </form>
+      </aside>
+    </article>
+  </main>
+
+  <footer id="status-bar">
+    <span id="model-name">claude-sonnet-4-6</span>
+    <span id="token-count">0 tokens</span>
+  </footer>
+
+  <script src="/app.js" type="module"></script>
+  <style>
+    body { margin: 0; font-family: monospace; background: #0a0a0a; color: #e0e0e0; }
+    #app-root { display: flex; height: 100vh; }
+    #sidebar { width: 320px; border-left: 1px solid #333; }
+  </style>
+</body>
+</html>

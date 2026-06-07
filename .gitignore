@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# AI tools & IDE
+.claude/
+.agents/
+.opencode/
+.gemini/
+.cursorignore
+.pnpm-store/
+
+# Private AI instruction files
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+UMBRA.md
+
+# Test coverage output
+coverage/
+
+# User data
+.umbra/
+
+# Environment
+.env
+
+# VitePress docs build
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

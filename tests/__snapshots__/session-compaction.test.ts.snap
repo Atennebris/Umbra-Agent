@@ -1,0 +1,59 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`session compaction snapshots > builds a stable session window 1`] = `
+{
+  "recentEvents": [
+    {
+      "id": "evt-u",
+      "payload": {
+        "text": "What was the last step?",
+      },
+      "timestamp": "2026-05-14T09:06:00.000Z",
+      "type": "user_message",
+    },
+  ],
+  "summary": "Previous session summarized here.",
+}
+`;
+
+exports[`session compaction snapshots > compacts events with a deterministic summary 1`] = `
+{
+  "compactedEventCount": 2,
+  "newTokens": 80,
+  "oldTokens": 105,
+  "recentEventCount": 1,
+  "summary": "# Session Compact
+## Goals
+- How do I setup Tree-sitter?
+## Progress
+- Done: none
+- Files: none
+## Next Steps
+- Preserved tail: none
+- Note: Focus on technical setup.",
+}
+`;
+
+exports[`session compaction snapshots > estimates tokens deterministically 1`] = `
+{
+  "text": "Umbra CLI is a local AI agent orchestrator.",
+  "tokens": 11,
+}
+`;
+
+exports[`session compaction snapshots > produces iterative UPDATE summary when previous compaction exists 1`] = `
+{
+  "compactedEventCount": 2,
+  "newTokens": 78,
+  "oldTokens": 102,
+  "recentEventCount": 1,
+  "summary": "# Session Update
+## Previous Summary
+# Session Compact
+## Goals
+- set up tree-sitter
+## New Progress
+- Goals: Now configure the LSP server
+- Preserved tail: tool_result: LSP server configured",
+}
+`;

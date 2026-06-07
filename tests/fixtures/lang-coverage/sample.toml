@@ -1,0 +1,16 @@
+[daemon]
+host = "127.0.0.1"
+port = 9876
+log_level = "info"
+
+[database]
+path = "~/.umbra/memory.sqlite"
+max_connections = 10
+
+[provider.openai]
+model = "gpt-4o"
+timeout = 30
+
+[provider.anthropic]
+model = "claude-opus-4-7"
+timeout = 60

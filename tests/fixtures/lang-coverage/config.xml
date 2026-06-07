@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration id="umbra-config">
+  <daemon>
+    <host name="daemonHost">127.0.0.1</host>
+    <port key="daemonPort">9876</port>
+    <logLevel>info</logLevel>
+  </daemon>
+  <providers>
+    <provider name="openai">
+      <model>gpt-4o</model>
+      <timeout>30</timeout>
+    </provider>
+    <provider name="anthropic">
+      <model>claude-opus-4-7</model>
+      <timeout>60</timeout>
+    </provider>
+  </providers>
+  <memory>
+    <backend>sqlite</backend>
+    <path key="dbPath">~/.umbra/memory.sqlite</path>
+  </memory>
+</configuration>

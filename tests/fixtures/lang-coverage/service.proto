@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package umbra.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message Session {
+  string id = 1;
+  string user_id = 2;
+  repeated Message messages = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message Message {
+  string id = 1;
+  string role = 2;
+  string content = 3;
+}
+
+message CreateSessionRequest {
+  string model = 1;
+  repeated Message initial_messages = 2;
+}
+
+enum SessionStatus {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+  COMPLETED = 2;
+  ERROR = 3;
+}
+
+service SessionService {
+  rpc CreateSession (CreateSessionRequest) returns (Session);
+  rpc GetSession (GetSessionRequest) returns (Session);
+  rpc ListSessions (google.protobuf.Empty) returns (stream Session);
+  rpc DeleteSession (DeleteSessionRequest) returns (google.protobuf.Empty);
+}
+
+message GetSessionRequest {
+  string id = 1;
+}
+
+message DeleteSessionRequest {
+  string id = 1;
+}
+
+oneof request_type {
+  string text = 1;
+  bytes binary = 2;
+}

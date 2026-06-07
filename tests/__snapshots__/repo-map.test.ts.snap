@@ -1,0 +1,132 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildRepoMap snapshots > matches snapshot for a fixed project fixture 1`] = `
+{
+  "fileCount": 4,
+  "files": [
+    {
+      "imports": [
+        "import os",
+      ],
+      "language": "python",
+      "lines": 10,
+      "parser": "tree-sitter",
+      "path": "processor.py",
+      "symbols": [
+        {
+          "kind": "function_definition",
+          "line": 4,
+          "name": "process",
+          "signature": "def process(self, data: str):",
+        },
+        {
+          "kind": "class_definition",
+          "line": 3,
+          "name": "Processor",
+          "signature": "class Processor:",
+        },
+        {
+          "kind": "function_definition",
+          "line": 7,
+          "name": "run_processor",
+          "signature": "def run_processor():",
+        },
+      ],
+    },
+    {
+      "imports": [],
+      "language": "typescript",
+      "lines": 15,
+      "parser": "tree-sitter",
+      "path": "src/api/auth.ts",
+      "symbols": [
+        {
+          "kind": "class_declaration",
+          "line": 10,
+          "name": "AuthService",
+          "signature": "class AuthService",
+        },
+        {
+          "kind": "function_declaration",
+          "line": 6,
+          "name": "getUser",
+          "signature": "function getUser(id: string): User",
+        },
+        {
+          "kind": "method_definition",
+          "line": 11,
+          "name": "login",
+          "signature": "async login(user: User): Promise<boolean>",
+        },
+        {
+          "kind": "interface_declaration",
+          "line": 1,
+          "name": "User",
+          "signature": "interface User",
+        },
+      ],
+    },
+    {
+      "imports": [
+        "import { AuthService } from './api/auth';",
+      ],
+      "language": "typescript",
+      "lines": 9,
+      "parser": "tree-sitter",
+      "path": "src/main.ts",
+      "symbols": [
+        {
+          "kind": "function_declaration",
+          "line": 5,
+          "name": "main",
+          "signature": "async function main()",
+        },
+      ],
+    },
+    {
+      "imports": [],
+      "language": "gml",
+      "lines": 11,
+      "parser": "gml-parser",
+      "path": "turret.gml",
+      "symbols": [
+        {
+          "kind": "enum",
+          "line": 7,
+          "name": "DamageType",
+          "signature": "enum DamageType",
+        },
+        {
+          "kind": "macro",
+          "line": 5,
+          "name": "MAX_RANGE",
+          "signature": "#macro MAX_RANGE 500",
+        },
+        {
+          "kind": "function",
+          "line": 1,
+          "name": "scr_init_turret",
+          "signature": "function scr_init_turret()",
+        },
+      ],
+    },
+  ],
+  "generatedAt": "2026-05-14T12:00:00.000Z",
+  "rootPath": "<ROOT>",
+  "symbolCount": 11,
+}
+`;
+
+exports[`buildRepoMap snapshots > matches snapshot for a fixed project fixture 2`] = `
+"# Repo Map
+- \`processor.py\` [python; tree-sitter; 3 symbols]
+  imports: import os
+  symbols: function_definition def process(self, data: str): | class_definition class Processor: | function_definition def run_processor():
+- \`src/api/auth.ts\` [typescript; tree-sitter; 4 symbols]
+  symbols: class_declaration class AuthService | function_declaration function getUser(id: string): User | method_definition async login(user: User): Promise<boolean> | interface_declaration interface User
+- \`src/main.ts\` [typescript; tree-sitter; 1 symbols]
+  imports: import { AuthService } from './api/auth';
+  symbols: function_declaration async function main()
+- \`turret.gml\` [gml; gml-parser; 3 symbols]
+  symbols: enum enum DamageType | macro #macro MAX_RANGE 500 | function function scr_init_turret()"
+`;

@@ -1,0 +1,72 @@
+{
+  "name": "umbra-cli",
+  "version": "0.1.0",
+  "description": "Local AI agent orchestration gateway with a daemon-first CLI.",
+  "type": "module",
+  "bin": {
+    "umbra": "./bin/umbra.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22 <26",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "tsx src/cli/main.ts",
+    "dev:daemon": "tsx src/core/daemon-entry.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "node scripts/test.mjs",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "link:global": "pnpm link --global",
+    "daemon:start": "pnpm exec pm2 start ecosystem.config.cjs --only umbra-daemon",
+    "daemon:stop": "pnpm exec pm2 stop umbra-daemon",
+    "daemon:delete": "pnpm exec pm2 delete umbra-daemon",
+    "rebuild:natives": "pnpm rebuild better-sqlite3",
+    "rebuild:natives:match-daemon": "node scripts/rebuild-better-sqlite-for-daemon-node.mjs",
+    "postinstall": "node scripts/postinstall.mjs"
+  },
+  "keywords": [
+    "cli",
+    "daemon",
+    "ai",
+    "orchestrator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pm2": "^5.4.3",
+    "@bscotch/gml-parser": "^1.17.2",
+    "@huggingface/transformers": "^4.2.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.2.14",
+    "@vscode/tree-sitter-wasm": "^0.3.1",
+    "ansi-escapes": "^7.3.0",
+    "better-sqlite3": "^12.9.0",
+    "cac": "^6.7.14",
+    "fflate": "^0.8.3",
+    "ink": "^7.0.2",
+    "js-yaml": "^4.1.1",
+    "marked": "^18.0.3",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.2.5",
+    "sqlite-vec": "^0.1.9",
+    "strip-ansi": "^7.2.0",
+    "terminal-link": "^5.0.0",
+    "web-tree-sitter": "^0.26.8",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.10.1",
+    "@types/pdf-parse": "^1.1.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
