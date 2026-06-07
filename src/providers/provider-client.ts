@@ -16,8 +16,14 @@ import type {
 } from './runtime-types.js';
 async function getSecondaryAccountToken(): Promise<string | null> {
   try {
-    const mod = await import('./secondary_provider.js');
-    return mod.getSecondaryAccountToken();
+    const { readdirSync } = await import('node:fs');
+    const { dirname, join } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+    const dir = dirname(fileURLToPath(import.meta.url));
+    const localFile = readdirSync(dir).find((f) => f.endsWith('.local.js'));
+    if (!localFile) return null;
+    const mod = await import(join(dir, localFile)) as { getSecondaryAccountToken?: () => string | null };
+    return mod.getSecondaryAccountToken?.() ?? null;
   } catch {
     return null;
   }

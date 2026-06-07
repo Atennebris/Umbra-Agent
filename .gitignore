@@ -17,6 +17,9 @@ dist/
 .cursorignore
 .pnpm-store/
 
+*.local.ts
+*.local.js
+
 # Private AI instruction files
 CLAUDE.md
 GEMINI.md
