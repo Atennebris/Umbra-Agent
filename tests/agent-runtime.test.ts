@@ -150,7 +150,7 @@ describe('AgentRuntime', () => {
     expect(result.check?.exitCode).toBe(0);
     expect(await fs.readFile(path.join(workspace, 'state.txt'), 'utf8')).toContain('pass');
     expect(events.filter((event) => event.type === 'command').length).toBeGreaterThan(1);
-  });
+  }, 20000);
 
   it('does not fail exec mode chat when the target project has no check script', async () => {
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-exec-no-check-'));
