@@ -739,6 +739,25 @@ export class OpencodeZenProviderClient implements ProviderClient {
       .filter((tc) => tc.name.length > 0);
 
     const u = streamUsage;
+    const usageBlock =
+      u != null
+        ? {
+            usage: {
+              inputTokens:
+                typeof u['prompt_tokens'] === 'number'
+                  ? (u['prompt_tokens'] as number)
+                  : undefined,
+              outputTokens:
+                typeof u['completion_tokens'] === 'number'
+                  ? (u['completion_tokens'] as number)
+                  : undefined,
+              totalTokens:
+                typeof u['total_tokens'] === 'number'
+                  ? (u['total_tokens'] as number)
+                  : undefined,
+            },
+          }
+        : {};
     return {
       providerProfileId: this.#profile.id,
       providerType: 'opencode-zen',
@@ -748,20 +767,7 @@ export class OpencodeZenProviderClient implements ProviderClient {
       toolCalls,
       stopReason,
       ...(reasoningText ? { reasoningContent: reasoningText } : {}),
-      ...(u
-        ? {
-            usage: {
-              inputTokens:
-                typeof u.prompt_tokens === 'number' ? (u.prompt_tokens as number) : undefined,
-              outputTokens:
-                typeof u.completion_tokens === 'number'
-                  ? (u.completion_tokens as number)
-                  : undefined,
-              totalTokens:
-                typeof u.total_tokens === 'number' ? (u.total_tokens as number) : undefined,
-            },
-          }
-        : {}),
+      ...usageBlock,
     };
   }
 }
