@@ -1,0 +1,10 @@
+2026-05-28T10:00:00.000Z [INFO] Daemon starting on 127.0.0.1:9876
+2026-05-28T10:00:01.000Z [INFO] Database connected: memory.sqlite
+2026-05-28T10:00:05.000Z [WARN] Provider openai slow response: 5200ms
+2026-05-28T10:01:00.000Z [ERROR] Failed to load plugin: unknown-plugin
+2026-05-28T10:01:01.000Z [INFO] Session created: sess_abc123
+2026-05-28T10:02:00.000Z [ERROR] Connection refused: anthropic API unreachable
+2026-05-28T10:02:01.000Z [WARN] Retrying provider connection (attempt 2/3)
+2026-05-28T10:03:00.000Z [FATAL] Out of memory: heap allocation failed
+2026-05-28T10:03:01.000Z [ERROR] Exception in session handler: TypeError: Cannot read property 'id' of undefined
+2026-05-28T10:03:02.000Z [INFO] Graceful shutdown initiated

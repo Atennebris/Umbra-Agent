@@ -1,4 +1,3 @@
-import { env, pipeline } from '@huggingface/transformers';
 import { resolveRuntimeLayout } from './runtime-layout.js';
 import { loadRuntimeSettings } from './settings-store.js';
 
@@ -38,14 +37,6 @@ export class TransformersTextEmbedder implements TextEmbedder {
   #ready = false;
   #lastError: string | null = null;
 
-  constructor() {
-    env.allowLocalModels = true;
-    env.allowRemoteModels = true;
-    env.useFS = true;
-    env.useFSCache = true;
-    env.cacheDir = this.#layout.transformersCacheDir;
-  }
-
   getStatus() {
     return {
       backend: 'transformers-js' as const,
@@ -79,10 +70,18 @@ export class TransformersTextEmbedder implements TextEmbedder {
 
   async #getPipeline(): Promise<FeatureExtractor> {
     if (!this.#pipelinePromise) {
-      this.#pipelinePromise = pipeline(
-        'feature-extraction',
-        this.#settings.embeddings.model,
-      ) as Promise<FeatureExtractor>;
+      this.#pipelinePromise = (async () => {
+        const { env, pipeline } = await import('@huggingface/transformers');
+        env.allowLocalModels = true;
+        env.allowRemoteModels = true;
+        env.useFS = true;
+        env.useFSCache = true;
+        env.cacheDir = this.#layout.transformersCacheDir;
+        return pipeline(
+          'feature-extraction',
+          this.#settings.embeddings.model,
+        ) as Promise<FeatureExtractor>;
+      })();
     }
 
     try {

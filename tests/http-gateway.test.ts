@@ -436,7 +436,7 @@ describe('HttpGateway', () => {
       providerId: string;
     };
     expect(webSettingsResponse.status).toBe(200);
-    expect(webSettings.mode).toBe('off');
+    expect(webSettings.mode).toBe('live');
     expect(webSettings.providerId).toBe('ddg');
 
     const updateWebResponse = await fetch(`http://127.0.0.1:${address.port}/web/settings`, {

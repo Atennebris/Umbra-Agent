@@ -117,7 +117,7 @@ describe('tools runner', () => {
       call: {
         name: 'shell.exec',
         arguments: {
-          command: 'Get-Location',
+          command: process.platform === 'win32' ? 'Get-Location' : 'pwd',
         },
       },
     });
@@ -211,7 +211,10 @@ describe('tools runner', () => {
       call: {
         name: 'shell.exec',
         arguments: {
-          command: 'Write-Output "before fail"; Write-Error "boom"; exit 7',
+          command:
+            process.platform === 'win32'
+              ? 'Write-Output "before fail"; Write-Error "boom"; exit 7'
+              : 'echo "before fail"; echo "boom" >&2; exit 7',
         },
       },
     });

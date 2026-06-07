@@ -140,7 +140,7 @@ describe('web search', () => {
     process.env.UMBRA_HOME = runtimeDir;
 
     const initial = getWebSearchSettings();
-    expect(initial.mode).toBe('off');
+    expect(initial.mode).toBe('live');
     expect(initial.providerId).toBe('ddg');
 
     // Set a fake API key so the auto-migration doesn't switch tavily → jina

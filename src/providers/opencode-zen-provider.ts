@@ -748,7 +748,8 @@ export class OpencodeZenProviderClient implements ProviderClient {
         ? {
             usage: {
               inputTokens: typeof u.prompt_tokens === 'number' ? u.prompt_tokens : undefined,
-              outputTokens: typeof u.completion_tokens === 'number' ? u.completion_tokens : undefined,
+              outputTokens:
+                typeof u.completion_tokens === 'number' ? u.completion_tokens : undefined,
               totalTokens: typeof u.total_tokens === 'number' ? u.total_tokens : undefined,
             },
           }
