@@ -47,6 +47,9 @@ importers:
       pdf-parse:
         specifier: ^2.4.5
         version: 2.4.5
+      pm2:
+        specifier: ^5.4.3
+        version: 5.4.3
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -78,9 +81,6 @@ importers:
       '@types/pdf-parse':
         specifier: ^1.1.5
         version: 1.1.5
-      pm2:
-        specifier: ^5.4.3
-        version: 5.4.3
       tsx:
         specifier: ^4.20.6
         version: 4.21.0
