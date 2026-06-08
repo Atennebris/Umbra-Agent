@@ -1,6 +1,38 @@
 # Umbra Agent
 
-An AI-powered agent for general-purpose assistance with a focus on coding. It runs as a background daemon, connects to any LLM provider, and autonomously handles tasks — writing, editing, testing, and fixing bugs.
+Every LLM has a hard limit on how much it can see at once — and every token costs money. The bigger your project, the longer your session, the faster you hit that wall. Most AI coding tools either crash into it or blindly stuff the model with everything and burn through your budget in minutes.
+
+Umbra is built around a different approach: **aggressive, layered context management that keeps the model effective within a fixed budget**, no matter how large the project or how long the session runs.
+
+---
+
+## How Umbra manages context
+
+Every request passes through a stack of automatic mechanisms before a single token is sent to the model:
+
+**Repo map** — instead of dumping raw files, Umbra builds a symbol-level AST outline of the entire project (functions, classes, types, imports) across 40+ languages. A 500-file codebase becomes a compact markdown index of ~5–20 KB. Cached for 15 seconds — no re-parsing on rapid consecutive tasks.
+
+**Retrieval packets** — when the agent searches code with `search.rg` or `search.files`, results are compressed into a ranked, token-bounded packet before they reach the model. Raw ripgrep output of 15 KB becomes a 1–2 KB packet. Triggered automatically when the tool output exceeds 1,500 tokens.
+
+**5-level compression** — tool outputs (shell stdout, diffs, logs) are intelligently truncated with head + tail preservation. Critical lines — `Error:`, `TypeError:`, stack traces, exit codes — are always rescued even from truncated sections. Levels range from `lite` (500 max lines) to `ultra` (20 max lines).
+
+**Split-turn** — if the agent makes many tool calls in one turn and the message window approaches the limit, earlier tool pairs are compressed into a summary in-place while the last 3 pairs stay raw. The model never loses recent context.
+
+**Sliding window** — the message history is trimmed from the oldest end when the payload budget (80,000 tokens) is approached. The system message and current turn are always preserved.
+
+**Session compaction** — long sessions are summarized on demand (`/compact`) or automatically. A 50+ event session becomes one structured summary (goals, progress, files touched, failures) plus the last 6 raw events. Savings: 70–90% on accumulated session history.
+
+**Vector memory** — past sessions are stored as embeddings. On each task, only the top 5 semantically similar past memories are injected, bounded to ~2,500 tokens.
+
+**Mode-based budgets** — the context budget and compression level adapt to the task:
+
+| Mode | Context budget | Compression |
+|---|---|---|
+| `agent` / `plan` | 32,000 tokens | standard |
+| `exec` (harness loop) | 32,000 tokens | aggressive |
+| `full` | 128,000 tokens | off |
+
+The result: Umbra can work on large codebases, run multi-hour sessions, and iterate through dozens of tool calls — all within the token window your provider gives you, without you managing any of it manually.
 
 ---
 
@@ -10,8 +42,8 @@ Umbra Agent works as an always-on orchestrator. Give it a task, and it handles t
 
 Key capabilities:
 
-- **Autonomous Harness Loop** — runs your test suite, reads failures, sends them back to the model, and iterates until tests pass. No babysitting.
-- **Provider-agnostic** — works with OpenAI, Anthropic, Mistral, Ollama (free, local), LM Studio (free, local), and any OpenAI-compatible endpoint. Switch anytime.
+- **Autonomous Harness Loop** — runs your check script, reads failures, sends them back to the model, and iterates until the check passes. No babysitting.
+- **Provider-agnostic** — works with OpenAI, Anthropic, Mistral, Ollama (free, local), LM Studio (free, local), OpenCode Zen (free cloud), and any OpenAI-compatible endpoint. Switch anytime.
 - **Daemon architecture** — runs in the background via PM2. Queue tasks and manage sessions efficiently.
 - **Persistent memory** — one global SQLite database across all your projects. No leftover `.sqlite` files scattered around. Past solutions are indexed and recalled.
 - **Local-first** — your code and context stay on your machine. Nothing is sent to third-party services beyond the LLM provider you choose.
@@ -27,19 +59,24 @@ Key capabilities:
 
 ## Installation
 
-**Windows (PowerShell):**
-```powershell
-npm install -g umbra-agent
-# or
-pnpm add -g umbra-agent
+**curl:**
+```bash
+curl -fsSL https://umbra.expert/install.sh | sh
 ```
 
-**Linux / macOS:**
+**PowerShell (iwr):**
+```powershell
+iwr https://umbra.expert/install.ps1 | iex
+```
+
+**npm / pnpm:**
 ```bash
 npm install -g umbra-agent
 # or
 pnpm add -g umbra-agent
 ```
+
+> Install scripts (`install.sh` / `install.ps1`) are coming soon — they will handle Node.js, pnpm, and native dependencies automatically.
 
 > Python package — coming soon.
 
@@ -53,7 +90,12 @@ umbra
 
 That's it. Running `umbra` starts the background daemon automatically, opens the TUI, and stops the daemon cleanly when you exit. The agent is ready to work immediately.
 
-> **Background mode** — if you want the daemon to keep running without the TUI open (e.g. for headless task queuing), use `umbra start` / `umbra stop` separately.
+> **Background mode** — if you want the daemon to keep running without the TUI open (e.g. for headless task queuing), manage it directly:
+> ```bash
+> umbra daemon start    # start the daemon in the background
+> umbra daemon stop     # stop it
+> umbra daemon status   # check health and queue depth
+> ```
 
 ---
 
@@ -530,10 +572,18 @@ umbra start
 The daemon is registered with PM2 under the name `umbra-daemon`. PM2 restarts it automatically if it crashes and persists it across reboots.
 
 ```bash
-umbra start          # start (or ensure) the daemon
-umbra stop           # stop the daemon
-umbra status         # show daemon status via the HTTP gateway
+umbra daemon start    # start the daemon in the background
+umbra daemon stop     # stop the daemon
+umbra daemon status   # show health and queue depth
+umbra daemon status --json  # machine-readable output
+
+# short aliases also work
+umbra start
+umbra stop
+umbra status
 ```
+
+> `umbra daemon status` returns `fetch failed` when the daemon is not running — this is expected, not a bug.
 
 You can also use PM2 commands directly:
 
@@ -1212,9 +1262,10 @@ Mode changes take effect on the next message send.
 ### Headless CLI commands (outside TUI)
 
 ```bash
-umbra start                         # ensure daemon is running via PM2
-umbra stop                          # stop the daemon
-umbra status [--json]               # print daemon status
+umbra daemon start                  # start the daemon in the background
+umbra daemon stop                   # stop the daemon
+umbra daemon status                 # show health and queue depth
+umbra daemon status --json          # machine-readable output
 umbra task add "<task>"             # queue a background agent run
 umbra exec "<task>"                 # headless exec-mode harness run + exit
 umbra exec "<task>" --time 5m       # exec with explicit time limit

@@ -61,18 +61,41 @@ type ProvidersUseOptions = {
 export function createCli() {
   const cli = cac('umbra');
 
-  cli.command('start', 'Start the Umbra daemon through PM2.').action(async () => {
+  // daemon <action> — canonical form
+  cli
+    .command('daemon <action>', 'Manage the background daemon: start | stop | status.')
+    .option('--json', 'Print raw JSON output (status only).')
+    .action(async (action: string, options: StatusOptions) => {
+      if (action === 'start') {
+        const handler = await loadCliCommand('start');
+        await handler({});
+      } else if (action === 'stop') {
+        const handler = await loadCliCommand('stop');
+        await handler({});
+      } else if (action === 'status') {
+        const handler = await loadCliCommand('status');
+        await handler({ json: options.json ?? false });
+      } else {
+        process.stderr.write(
+          `Unknown daemon action: ${action}\nUse: umbra daemon start | stop | status\n`,
+        );
+        process.exitCode = 1;
+      }
+    });
+
+  // short aliases
+  cli.command('start', 'Start the daemon (alias for daemon start).').action(async () => {
     const handler = await loadCliCommand('start');
     await handler({});
   });
 
-  cli.command('stop', 'Stop the Umbra daemon through PM2.').action(async () => {
+  cli.command('stop', 'Stop the daemon (alias for daemon stop).').action(async () => {
     const handler = await loadCliCommand('stop');
     await handler({});
   });
 
   cli
-    .command('status', 'Show daemon health and queue state.')
+    .command('status', 'Show daemon status (alias for daemon status).')
     .option('--json', 'Print raw JSON output.')
     .action(async (options: StatusOptions) => {
       const handler = await loadCliCommand('status');
