@@ -2,22 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
-
-## [0.1.1] - 2026-06-08
-
-### Fixed
-
-- **OpenCode Zen provider** — cleaned up stream usage type assertions; token counts (`inputTokens`, `outputTokens`, `totalTokens`) are now extracted without redundant casts
-- **CI pipeline** — resolved all automated test failures across Node 22 and Node 24:
-  - Biome formatter: wrapped long `outputTokens` ternary to satisfy line-length rule
-  - `@huggingface/transformers` (onnxruntime-node) no longer crashes the process on import — the native binding is now loaded lazily inside `TransformersTextEmbedder`, so test suites that don't call `embedText()` are unaffected
-  - Shell tool tests now use platform-aware commands (`pwd` / `echo` on Linux, `Get-Location` / `Write-Output` on Windows) to match the shell the runtime selects per platform
-  - Exec harness check script: `check.ps1` is now invoked with `pwsh` on Linux/macOS and `powershell` on Windows, matching the PowerShell Core binary available on GitHub-hosted runners
-  - Agent runtime exec-harness test timeout raised to 20 s to account for `pwsh` cold-start latency on Linux
-  - Test fixture files `.env` and `daemon.log` were excluded by `.gitignore` patterns and therefore absent on CI; added targeted negation rules so the files are tracked by git
-  - Default web search mode aligned between source and tests (`live` by default, reflected in test expectations)
-
 ## [0.1.0] - 2026-06-07
 
 ### Added
@@ -37,3 +21,12 @@ All notable changes to this project will be documented in this file.
 - Structured parsers for JSON, YAML, Markdown, SQL, TOML, GraphQL, Protobuf, Terraform, Prisma, Solidity, Dockerfile, Makefile, and 30+ additional formats
 - Document extraction: PDF and DOCX
 - Cross-platform: Windows, macOS, Linux
+
+### Fixed
+
+- OpenCode Zen provider stream usage type assertions cleaned up
+- `@huggingface/transformers` native binding now loaded lazily — no crash on import
+- Shell tool tests use platform-aware commands for Linux/Windows compatibility
+- Exec harness `check.ps1` invoked with `pwsh` on Linux/macOS, `powershell` on Windows
+- Test fixture files `.env` and `daemon.log` added to git via `.gitignore` negation rules
+- Web search default mode aligned across source and tests
