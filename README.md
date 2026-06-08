@@ -9,6 +9,10 @@
 <a href="https://discord.gg/dW6uFFJ6WF">
   <img src="https://img.shields.io/badge/Discord-Join%20the%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
 </a>
+&nbsp;
+<a href="docs/en_documentation.md">
+  <img src="https://img.shields.io/badge/Documentation-English-7c5cbf?style=for-the-badge" alt="Documentation" />
+</a>
 
 </div>
 
@@ -86,3 +90,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+<a href="https://discord.gg/dW6uFFJ6WF">
+  <img src="https://img.shields.io/badge/Discord-Join%20the%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
+</a>
+
+</div>
