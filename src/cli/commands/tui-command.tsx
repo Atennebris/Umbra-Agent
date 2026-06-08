@@ -14,12 +14,12 @@ import { ensureDaemonWithPm2, stopDaemonWithPm2 } from '../pm2-client.js';
 import { scaffoldProjectInstructions } from '../scaffold.js';
 import { parseDroppedPaths } from '../tui/drop-paths.js';
 import { parseFileReferences } from '../tui/file-references.js';
+import { checkForUpdate, promptAndUpdate } from '../../utils/update-check.js';
 import { renderKeyValueCard, renderUmbraSplash } from '../tui/frame.js';
 import { imageFileToBase64 } from '../tui/image-base64.js';
 import { UmbraInkApp } from '../tui/ink-app.js';
 import { renderMarkdownToAnsi } from '../tui/markdown.js';
 import { StartupLoader } from '../tui/startup-loader.js';
-import { checkForUpdate, promptAndUpdate } from '../../utils/update-check.js';
 
 type TuiCommandInput = {
   prompt?: string;
