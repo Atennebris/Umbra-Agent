@@ -10,10 +10,10 @@
   <img src="https://img.shields.io/badge/Discord-Join%20the%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
 </a>
 
-<br><br>
+<br>
 
 <a href="docs/en_documentation.md">
-  <img src="https://img.shields.io/badge/Documentation-English-7c5cbf?style=for-the-badge" alt="Documentation" />
+  <img src="https://img.shields.io/badge/docs-english-7c5cbf?style=for-the-badge&logo=gitbook&logoColor=white&labelColor=2b2b2b" alt="Documentation" />
 </a>
 
 
