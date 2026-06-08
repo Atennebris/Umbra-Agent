@@ -1,17 +1,5 @@
 # Umbra Agent
 
-<div align="center">
-
-<a href="https://umbra.expert">
-  <img src="https://img.shields.io/badge/-umbra.expert-7c5cbf?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiBmb250LXdlaWdodD0iYm9sZCI+VTwvdGV4dD48L3N2Zz4=" alt="Website" />
-</a>
-&nbsp;
-<a href="https://discord.gg/dW6uFFJ6WF">
-  <img src="https://img.shields.io/badge/Discord-Join%20the%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
-</a>
-
-</div>
-
 An AI-powered agent for general-purpose assistance with a focus on coding. It runs as a background daemon, connects to any LLM provider, and autonomously handles tasks — writing, editing, testing, and fixing bugs.
 
 ---
@@ -39,27 +27,33 @@ Key capabilities:
 
 ## Installation
 
-```bash
+**Windows (PowerShell):**
+```powershell
+npm install -g umbra-agent
+# or
 pnpm add -g umbra-agent
 ```
+
+**Linux / macOS:**
+```bash
+npm install -g umbra-agent
+# or
+pnpm add -g umbra-agent
+```
+
+> Python package — coming soon.
 
 ---
 
 ## Quick start
 
 ```bash
-# Start the daemon
-umbra start
-
-# Open the TUI
 umbra
-
-# Connect an AI provider
-umbra providers connect
-
-# Add a task
-umbra task add "Refactor auth module and add tests"
 ```
+
+That's it. Running `umbra` starts the background daemon automatically, opens the TUI, and stops the daemon cleanly when you exit. The agent is ready to work immediately.
+
+> **Background mode** — if you want the daemon to keep running without the TUI open (e.g. for headless task queuing), use `umbra start` / `umbra stop` separately.
 
 ---
 
