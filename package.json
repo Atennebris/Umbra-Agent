@@ -1,5 +1,5 @@
 {
-  "name": "umbra-cli",
+  "name": "umbra-agent",
   "version": "0.1.0",
   "description": "Local AI agent orchestration gateway with a daemon-first CLI.",
   "type": "module",
