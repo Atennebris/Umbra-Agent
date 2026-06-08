@@ -119,6 +119,10 @@ describe('HttpGateway', () => {
     createdDirs.push(runtimeDir, projectDir);
     process.env.UMBRA_HOME = runtimeDir;
 
+    const memoryManager = new MemoryManager(createTestEmbedder());
+    memoryManager.initialize();
+    setMemoryManagerForTests(memoryManager);
+
     gateway = new HttpGateway({ host: '127.0.0.1', port: 0 });
     await gateway.start();
     const address = gateway.address;
