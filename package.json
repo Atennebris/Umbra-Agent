@@ -26,8 +26,8 @@
     "rebuild:natives:match-daemon": "node scripts/rebuild-better-sqlite-for-daemon-node.mjs",
     "postinstall": "node scripts/postinstall.mjs"
   },
-  "keywords": ["cli", "daemon", "ai", "orchestrator"],
-  "author": "",
+  "keywords": ["cli", "daemon", "ai", "orchestrator", "ai-agent", "llm", "coding-assistant", "autonomous-agent", "code-generation", "terminal"],
+  "author": "Atennebris",
   "license": "MIT",
   "dependencies": {
     "pm2": "^5.4.3",

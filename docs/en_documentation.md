@@ -1303,6 +1303,7 @@ These flags modify the behaviour of `umbra` (the default TUI launcher). They can
 | `--mode agent` | Agent mode — approval gates on destructive tools (default) |
 | `--mode full` | Full mode — all tools auto-allowed, 128 k context, no compression |
 | `--mode plan` | Plan mode — structured JSON output only, no tool execution |
+| `--update` | Check for updates and install if available, then exit |
 | `--web off` | Disable web search on launch |
 | `--web on` / `--web cached` | Enable web search (cached results) |
 | `--web live` | Enable web search with forced fresh results |
@@ -1317,6 +1318,7 @@ umbra --prompt "summarise auth.ts"  # send one prompt and exit
 umbra --exec                        # autonomous exec harness (no confirmations)
 umbra --debug                       # open debug event monitor
 umbra --doctor                      # run diagnostics and exit
+umbra --update                      # check for updates and install if available
 ```
 
 **Environment variable alternative for web mode:**

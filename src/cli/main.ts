@@ -319,23 +319,28 @@ export function createCli() {
     });
 
   // Default command: umbra [flags]
-  // umbra             → open TUI
-  // umbra --exec      → autonomous mode (no confirmations)
-  // umbra --debug     → debug monitor
-  // umbra --doctor    → run diagnostics
-  // umbra --prompt    → send single prompt
-  // umbra --project   → set project path
-  // umbra --mode      → agent | full | plan
   cli
     .command('', 'Open the Umbra terminal workspace.')
     .option('--exec', 'Autonomous mode — agent works without confirmation prompts.')
     .option('--debug', 'Open the debug monitor instead of the TUI.')
     .option('--doctor', 'Run environment diagnostics and exit.')
+    .option('--update', 'Check for updates and install if available, then exit.')
     .option('--prompt <text>', 'Send a single prompt and exit.')
     .option('--project <path>', 'Target project path instead of current directory.')
     .option('--mode <mode>', 'Permission mode: agent (default), full, plan.')
     .option('--web <mode>', 'Web search mode: off, on, cached, live.')
-    .action(async (options: TuiOptions & { exec?: boolean; debug?: boolean }) => {
+    .action(async (options: TuiOptions & { exec?: boolean; debug?: boolean; update?: boolean }) => {
+      if (options.update) {
+        const { checkForUpdate, promptAndUpdate } = await import('../utils/update-check.js');
+        process.stdout.write('Checking for updates...\n');
+        const result = await checkForUpdate(8000);
+        if (result.available) {
+          await promptAndUpdate(result.current, result.latest);
+        } else {
+          process.stdout.write('0 updates — you are on the latest version.\n');
+        }
+        return;
+      }
       if (options.doctor) {
         const handler = await loadCliCommand('doctor');
         await handler({ json: false, fix: false });

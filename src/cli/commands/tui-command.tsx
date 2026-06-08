@@ -19,6 +19,7 @@ import { imageFileToBase64 } from '../tui/image-base64.js';
 import { UmbraInkApp } from '../tui/ink-app.js';
 import { renderMarkdownToAnsi } from '../tui/markdown.js';
 import { StartupLoader } from '../tui/startup-loader.js';
+import { checkForUpdate, promptAndUpdate } from '../../utils/update-check.js';
 
 type TuiCommandInput = {
   prompt?: string;
@@ -35,6 +36,9 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
 
   // Persist the resolved project path so future launches from system dirs can fall back to it.
   saveLastProjectPath(targetProjectPath);
+
+  // Check for updates in the background — don't block startup.
+  const updatePromise = checkForUpdate(4000);
 
   const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !prompt;
 
@@ -127,6 +131,12 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
   if (!daemonReady) {
     process.stderr.write('[umbra] Daemon did not respond in time. Run `umbra start` first.\n');
     return;
+  }
+
+  // Show update prompt if a newer version is available.
+  const updateResult = await updatePromise;
+  if (updateResult.available) {
+    await promptAndUpdate(updateResult.current, updateResult.latest);
   }
 
   const initialMode = normalizeInitialMode(mode);
