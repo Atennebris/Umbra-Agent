@@ -921,7 +921,7 @@ Prompts of ≤ 8 words that match known greeting patterns (`hi`, `hello`, `thank
 
 ## Web Search (`web.search` + `web.fetch`)
 
-Web access is **disabled by default**. Enable it with `/web on` in the TUI, or set `webSearch.mode` in `~/.umbra/settings.json`.
+Use `/web` in the TUI to open the web search settings menu (mode toggle + provider picker), or edit `webSearch.mode` directly in `~/.umbra/settings.json`.
 
 ### Modes
 
@@ -958,8 +958,7 @@ The resolved `authSource` is reported in `umbra doctor` output: `env` / `runtime
 ### Switching providers
 
 ```bash
-# In the TUI
-/web provider brave
+# In the TUI — open the /web menu and select a provider with arrow keys
 
 # Or edit ~/.umbra/settings.json
 {
@@ -1134,115 +1133,167 @@ Typing `/` in the TUI input field opens the skill picker. The `argument-hint` va
 
 ## Custom Commands & TUI Integration
 
-The TUI exposes a rich set of slash commands in addition to skill invocations. Commands are handled client-side in the Ink app before the message is sent to the daemon.
+The TUI exposes slash commands handled client-side before the message reaches the daemon. Most commands open an **interactive menu** navigated with arrow keys and confirmed with Enter — only a few take a direct inline argument.
 
-### Runtime mode commands
+### Session & thread management
 
-| Command | Effect |
+| Command | Interaction |
+|---|---|
+| `/clear` | Start a new thread immediately |
+| `/new` | Start a new conversation context |
+| `/resume` | ↕ Pick a previous thread to resume |
+| `/thread` | ↕ Thread menu — resume / fork / archive / export / import |
+| `/compact [instructions]` | Summarise older history; optional free-text instructions inline |
+| `/compact settings` | ↕ Pick provider and model used for compaction |
+| `/goal [text\|clear]` | Set a session goal shown in the status bar and injected into the system prompt; `/goal clear` removes it |
+| `/status` | Ping the daemon and print queue health |
+| `/help` | Show the TUI command cheatsheet |
+
+### Runtime mode
+
+| Command | Interaction |
 |---|---|
 | `/agent` | Switch to agent mode (approval gates on destructive tools) |
-| `/full` | Switch to full mode (all tools auto-allowed, no dialogs) |
-| `/plan` | Switch to plan mode (structured plan output, no execution) |
-| `/exec` | Switch to exec mode (autonomous harness loop) |
+| `/full` | Switch to full mode — all tools auto-allowed, no dialogs, 128 k context |
+| `/plan` | Switch to plan mode — structured JSON output, no execution |
 
-Mode changes apply to the next message send — they update `initialMode` state in the Ink app without restarting the session.
+Mode changes take effect on the next message send.
 
-### Git commands
+### Git tools
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/git on` | Enable git tools (`git.status`, `git.diff`, `git.apply`, `git.commit`, `git.push`, `git.pull`) for this session |
+| `/git` | ↕ Menu — enable / disable / show status |
+| `/git on` | Enable git tools for this session |
 | `/git off` | Disable git tools |
 
-### Web search commands
+### Web search
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/web on` | Enable web search (`cached` mode by default) |
-| `/web off` | Disable web search |
-| `/web live` | Enable web search in `live` mode (fresh results) |
-| `/web provider <id>` | Switch provider (`ddg`, `jina`, `searxng`, `brave`, `tavily`) |
+| `/web` | ↕ Menu — toggle mode (off / cached / live) and switch provider |
 
-### Memory commands
+### Memory
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/memory` | Show current long-term memory for the project |
-| `/memory off` | Disable memory retrieval for this session |
-| `/memory on` | Enable memory retrieval |
-| `/memory clear` | Wipe all stored memory for the current project |
+| `/memories` | ↕ Memory settings menu |
+| `/mem on` | Show memory citations panel after each response |
+| `/mem off` | Hide memory citations panel |
+| `/reset memories` | ↕ Confirmation dialog — wipe local memories and project summary |
 
-### Session commands
+### Providers & models
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/compact` | Manually trigger session compaction (summarise history, keep last N events) |
-| `/compact settings` | Configure compaction provider and model |
-| `/clear` | Clear current session events (start fresh thread) |
-| `/fork` | Fork the current thread (new thread with same history up to this point) |
+| `/providers` | ↕ Provider menu — connect, add, use, list models, test, remove |
+| `/provider connect` | Multi-step dialog — type → key → base URL |
+| `/provider use` | ↕ Pick a configured profile to set as default |
+| `/provider models` | ↕ List and select a model for the active provider |
+| `/models` | Alias for `/provider models` |
 
-### Provider and model commands
+### Code review
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/model` | Open model picker for the current profile |
-| `/provider` | Open provider picker (switch active profile) |
-| `/provider connect` | Connect a new provider profile |
+| `/review` | Review uncommitted changes (staged + unstaged) |
+| `/review staged` | Review staged changes only |
+| `/review <file>` | Review a single file |
+| `/review settings` | ↕ Pick provider and model used for reviews |
 
-### Appearance and preferences
+### Extended thinking
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/theme <name>` | Apply a theme (see theming section for full list) |
-| `/theme` | Open interactive theme picker |
-| `/cursor blinking` | Animated block cursor |
-| `/cursor static` | Steady cursor |
-| `/mode agent` | Set `agent` as the default mode on next launch |
-| `/mode full` | Set `full` as the default mode on next launch |
-| `/usage off\|compact\|verbose` | Set token/cost display mode |
+| `/think` | ↕ Set reasoning token budget or disable (Anthropic models only) |
+| `/think <tokens\|off>` | Set directly inline: e.g. `/think 10000` or `/think off` |
 
-### Project context commands
+### Appearance & preferences
 
-| Command | Effect |
+| Command | Interaction |
 |---|---|
-| `/context` | Print the full repo map for the current project directory (calls `buildRepoMap`) |
-| `/context <dir>` | Print the repo map for a specific directory |
-| `/init` | Scaffold `UMBRA.md` / `AGENTS.md` instruction files for the current project |
-| `/trust list` | List all trusted paths (managed by `WorkspaceTrustManager`) |
-| `/trust remove <path>` | Remove a path from the trust list |
+| `/theme` | ↕ Theme picker with search — 40+ built-in themes |
+| `/usage` | ↕ Toggle per-request token stats: off / compact / full |
+| `/path` | ↕ Toggle project path display in the status bar |
+
+### Skills
+
+| Command | Interaction |
+|---|---|
+| `/skill-create` | Multi-step dialog — enter name → enter description → agent generates `SKILL.md` |
+| `/<skill-name> [args]` | Invoke any skill defined in `SKILL.md` files |
+
+### Project setup
+
+| Command | Interaction |
+|---|---|
+| `/init` | Scaffold `AGENTS.md` and local check scripts |
+| `/permissions` | ↕ Permission mode picker — Default / Full Access |
+
+---
 
 ### Headless CLI commands (outside TUI)
 
 ```bash
-umbra start                   # ensure daemon is running via PM2
-umbra stop                    # stop the daemon
-umbra status                  # print daemon status (JSON)
-umbra task add "<task>"       # queue a background agent run
-umbra exec "<task>"           # headless exec-mode harness run + exit
-umbra exec "<task>" --time 5m # exec with explicit time limit (5 min)
-umbra doctor                  # full health check
-umbra doctor --fix            # health check with auto-repair
-umbra doctor --json           # machine-readable output
-umbra permissions list        # list stored permission rules
-umbra permissions clear       # clear all permission rules
-umbra trust list              # list trusted workspace paths
-umbra trust remove <path>     # remove a trusted path
-umbra context [dir]           # print repo map to stdout
-umbra debug                   # tail live debug events (JSONL)
-umbra usage                   # print usage report from usage.jsonl
-umbra init [dir]              # scaffold instruction file
-umbra providers list          # list configured provider profiles
-umbra providers connect       # interactive provider setup
+umbra start                         # ensure daemon is running via PM2
+umbra stop                          # stop the daemon
+umbra status [--json]               # print daemon status
+umbra task add "<task>"             # queue a background agent run
+umbra exec "<task>"                 # headless exec-mode harness run + exit
+umbra exec "<task>" --time 5m       # exec with explicit time limit
+umbra doctor                        # full health check
+umbra doctor --fix                  # health check with auto-repair
+umbra doctor --json                 # machine-readable output
+umbra trust list                    # list trusted workspace paths
+umbra trust remove <path>           # remove a trusted path
+umbra context [dir]                 # print repo map to stdout
+umbra debug [--interval <ms>]       # tail live debug events (JSONL)
+umbra usage                         # print usage report from usage.jsonl
+umbra init [dir] [--force]          # scaffold instruction file
+umbra providers list [--json]       # list configured provider profiles
+umbra providers add <type> <label>  # create a provider profile
+umbra providers connect [type]      # OAuth / interactive provider setup
+umbra providers use <id>            # set default provider profile
+umbra providers models [id]         # list models for a provider
+umbra providers test <id>           # test a provider connection
+umbra providers catalog [--json]    # browse the model catalog
+umbra providers remove <id>         # delete a provider profile
+umbra permission [mode]             # manage permission mode interactively
 ```
 
 ### Launch flags
 
+These flags modify the behaviour of `umbra` (the default TUI launcher). They can also be passed to `umbra tui`.
+
+| Flag | Effect |
+|---|---|
+| `--exec` | Autonomous mode — routes to the exec harness loop without confirmation prompts |
+| `--debug` | Open the debug event monitor instead of the TUI |
+| `--doctor` | Run environment diagnostics and exit (same as `umbra doctor`) |
+| `--prompt <text>` | Send a single prompt non-interactively and exit |
+| `--project <path>` | Use this directory as the project root instead of the current shell `cwd` |
+| `--mode agent` | Agent mode — approval gates on destructive tools (default) |
+| `--mode full` | Full mode — all tools auto-allowed, 128 k context, no compression |
+| `--mode plan` | Plan mode — structured JSON output only, no tool execution |
+| `--web off` | Disable web search on launch |
+| `--web on` / `--web cached` | Enable web search (cached results) |
+| `--web live` | Enable web search with forced fresh results |
+
 ```bash
-umbra --mode full             # launch TUI in full mode
-umbra --mode plan             # launch TUI in plan mode
-umbra --web live              # launch with web search enabled (live)
-umbra --project /path/to/dir  # override project path
-umbra --debug                 # open debug sidecar (Windows: new console)
+umbra                               # open TUI (agent mode)
+umbra --mode full                   # open TUI in full mode
+umbra --mode plan                   # open TUI in plan mode
+umbra --web live                    # open TUI with live web search enabled
+umbra --project /path/to/dir        # set project path
+umbra --prompt "summarise auth.ts"  # send one prompt and exit
+umbra --exec                        # autonomous exec harness (no confirmations)
+umbra --debug                       # open debug event monitor
+umbra --doctor                      # run diagnostics and exit
+```
+
+**Environment variable alternative for web mode:**
+```bash
+UMBRA_WEB_SEARCH_MODE=live umbra    # same as --web live
 ```
 
 ### Non-interactive mode
@@ -1251,36 +1302,7 @@ When stdout is not a TTY (piped, CI, IDE extension), `umbra` skips the Ink TUI a
 
 ---
 
-## Creating Skills — `/skill-new` and `/skill-create`
-
-There are two ways to create a skill:
-
-### `/skill-new` — instant blank scaffold
-
-```
-/skill-new <name> [description...]
-```
-
-Creates a minimal `SKILL.md` in `<project>/.umbra/skills/<name>/SKILL.md` immediately, without calling the LLM:
-
-```markdown
----
-name: <name>
-description: <description or "name skill" fallback>
-argument-hint: <args>
----
-
-$ARGUMENTS
-```
-
-The file is written synchronously. Open it in your editor and fill in the body. Validation errors (invalid name format, missing description) are returned inline as CLI output rather than creating a broken file.
-
-**Name rules:** lowercase `a–z`, `0–9`, hyphens only; max 64 chars; must not start, end, or contain consecutive hyphens.
-
-```bash
-/skill-new deploy Deploy the project to staging
-# creates: .umbra/skills/deploy/SKILL.md
-```
+## Creating Skills — `/skill-create`
 
 ### `/skill-create` — AI-assisted generation
 
