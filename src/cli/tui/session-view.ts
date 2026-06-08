@@ -17,6 +17,7 @@ export type InputSnapshot = {
 
 export const BUILTIN_SLASH_COMMANDS: SlashCommandHelp[] = [
   { name: '/permissions', summary: 'Choose agent access mode (Default / Full Access).' },
+  { name: '/mem', summary: 'Memory settings: citations panel, retrieval, writes, reset.' },
   { name: '/mem on', summary: 'Show memory citations panel after each response.' },
   { name: '/mem off', summary: 'Hide memory citations panel (default).' },
   { name: '/agent', summary: 'Switch back to agent mode (from plan).' },

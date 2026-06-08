@@ -391,6 +391,11 @@ type ProviderDialogState =
   | {
       kind: 'no-provider-prompt';
       selectedIndex: number;
+    }
+  | {
+      kind: 'mem-menu';
+      selectedIndex: number;
+      showCitations: boolean;
     };
 
 export function UmbraInkApp({
@@ -445,6 +450,7 @@ export function UmbraInkApp({
   const [escConfirmPending, setEscConfirmPending] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [showCitations, setShowCitations] = useState(false);
+  const showCitationsRef = useRef(false);
   const [usageDetailMode, setUsageDetailMode_] = useState<UsageDetailMode>(() =>
     getUsageDetailMode(),
   );
@@ -650,6 +656,10 @@ export function UmbraInkApp({
         },
         setGitEnabled: (enabled: boolean) => setGitEnabled(enabled),
         setShowPath: (visible: boolean) => setShowPath(visible),
+        setShowCitations: (show: boolean) => {
+          setShowCitations(show);
+          showCitationsRef.current = show;
+        },
         setActiveThemeName: (name: string) => {
           applyTheme(name);
           setCurrentThemeName(name);
@@ -1353,11 +1363,19 @@ export function UmbraInkApp({
         return;
       }
 
+      if (value === '/mem') {
+        setBuffer('');
+        setCursorPosition(0);
+        setProviderDialog({ kind: 'mem-menu', selectedIndex: 0, showCitations });
+        return;
+      }
+
       if (value === '/mem on' || value === '/mem off') {
         setBuffer('');
         setCursorPosition(0);
         const next = value === '/mem on';
         setShowCitations(next);
+        showCitationsRef.current = next;
         appendEntries([
           {
             id: createEntryId(),
@@ -1820,6 +1838,10 @@ export function UmbraInkApp({
     usageDetailModeRef.current = usageDetailMode;
   }, [usageDetailMode]);
 
+  useEffect(() => {
+    showCitationsRef.current = showCitations;
+  }, [showCitations]);
+
   // Reload skills and clear active skill name when a run completes
   useEffect(() => {
     if (prevBusyRef.current && !busy) {
@@ -2243,7 +2265,7 @@ export function UmbraInkApp({
         if (nextRun.status !== 'queued' && nextRun.status !== 'running') {
           writeRunDebugMetadata(nextRun);
           const runDurationMs = Date.now() - watchStartedAt;
-          const runEntries = formatRunEntries(nextRun, showCitations, runDurationMs);
+          const runEntries = formatRunEntries(nextRun, showCitationsRef.current, runDurationMs);
           // Read preference directly to avoid stale-closure on startup
           const detailMode =
             usageDetailModeRef.current !== 'off'
@@ -3638,6 +3660,41 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
     );
   }
 
+  if (state.kind === 'mem-menu') {
+    const options = [
+      {
+        label: 'Citations panel: on',
+        hint: 'Show memory sources after each response.',
+        value: true,
+      },
+      {
+        label: 'Citations panel: off',
+        hint: 'Hide memory citations (default).',
+        value: false,
+      },
+      {
+        label: 'Memory settings',
+        hint: 'Toggle retrieval, writes, and reset memories.',
+        value: 'settings' as const,
+      },
+    ];
+    return (
+      <Box marginTop={1} flexDirection="column">
+        <Text color={umbraTheme.accent}>Memory</Text>
+        <Text color={umbraTheme.muted}>{'↑↓ navigate  1-3 shortcut  Enter confirm  Esc cancel'}</Text>
+        {options.map((opt, index) => (
+          <Box key={String(opt.value)} flexDirection="column">
+            <Text color={index === state.selectedIndex ? umbraTheme.accent : umbraTheme.text}>
+              {index === state.selectedIndex ? '>' : ' '} {index + 1}. {opt.label}
+              {opt.value !== 'settings' && opt.value === state.showCitations ? ' (current)' : ''}
+            </Text>
+            <Text color={umbraTheme.muted}>{`   ${opt.hint}`}</Text>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
   if (state.kind === 'provider-custom') {
     const rows = [
       {
@@ -4047,6 +4104,7 @@ async function handleProviderDialogInput(
     setShowPath?: (visible: boolean) => void;
     setActiveThemeName?: (name: string) => void;
     previewTheme?: (name: string) => void;
+    setShowCitations?: (show: boolean) => void;
   },
 ): Promise<void> {
   // theme-select: Esc reverts to the original theme before closing
@@ -4857,6 +4915,58 @@ async function handleProviderDialogInput(
       const previewName = newFiltered[0] ?? state.currentTheme;
       actions.previewTheme?.(previewName);
       actions.setProviderDialog({ ...state, query: newQuery, selectedIndex: 0 });
+      return;
+    }
+  }
+
+  if (state.kind === 'mem-menu') {
+    const options: Array<{ label: string; value: boolean | 'settings' }> = [
+      { label: 'Citations panel: on', value: true },
+      { label: 'Citations panel: off', value: false },
+      { label: 'Memory settings', value: 'settings' },
+    ];
+
+    if (key.upArrow || key.downArrow) {
+      actions.setProviderDialog({
+        ...state,
+        selectedIndex: key.upArrow
+          ? state.selectedIndex <= 0
+            ? options.length - 1
+            : state.selectedIndex - 1
+          : state.selectedIndex >= options.length - 1
+            ? 0
+            : state.selectedIndex + 1,
+      });
+      return;
+    }
+
+    if (key.return || (!key.ctrl && !key.meta && /^[123]$/.test(input))) {
+      const idx = /^[123]$/.test(input) ? Number(input) - 1 : state.selectedIndex;
+      const selected = options[idx] ?? options[state.selectedIndex];
+      if (!selected) return;
+
+      if (selected.value === 'settings') {
+        actions.setProviderDialog(null);
+        void openMemorySettingsDialog(
+          actions.projectPath,
+          actions.currentThread,
+          null,
+          actions.setProviderDialog,
+        );
+        return;
+      }
+
+      const next = selected.value as boolean;
+      actions.setShowCitations?.(next);
+      actions.setProviderDialog(null);
+      actions.appendEntries([
+        {
+          id: createEntryId(),
+          kind: 'event',
+          tone: 'info',
+          text: `system> memory panel ${next ? 'on — citations visible after next response' : 'off'}`,
+        },
+      ]);
       return;
     }
   }
