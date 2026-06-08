@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 132" width="660" height="132">
+  <rect width="660" height="132" fill="#0d1117"/>
+  <text font-family="'Courier New',Courier,monospace" font-size="17" fill="#9d6fff" font-weight="bold" text-anchor="middle">
+    <tspan x="330" y="28">██╗░░░██╗███╗░░░███╗██████╗░██████╗░░█████╗░</tspan>
+    <tspan x="330" y="49">██║░░░██║████╗░████║██╔══██╗██╔══██╗██╔══██╗</tspan>
+    <tspan x="330" y="70">██║░░░██║██╔████╔██║██████╦╝██████╔╝███████║</tspan>
+    <tspan x="330" y="91">██║░░░██║██║╚██╔╝██║██╔══██╗██╔══██╗██╔══██║</tspan>
+    <tspan x="330" y="112">╚██████╔╝██║░╚═╝░██║██████╦╝██║░░██║██║░░██║</tspan>
+    <tspan x="330" y="128" fill="#6b4cad" font-size="14">░╚═════╝░╚═╝░░░░░╚═╝╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝</tspan>
+  </text>
+</svg>
