@@ -6,7 +6,7 @@ This document helps you decide whether and how to contribute in a way that's lik
 
 ## How this project is run
 
-- Umbra Agent has one active maintainer ([@Tenebris](https://github.com/Tenebris)).
+- Umbra Agent has one active maintainer ([@Atennebris](https://github.com/Atennebris)).
 - Review bandwidth is limited.
 - Not every contribution will be accepted, even if technically correct. Alignment with project direction matters as much as code quality.
 
