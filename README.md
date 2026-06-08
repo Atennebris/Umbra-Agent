@@ -23,7 +23,7 @@
 
 <div align="center">
 
-<img src="assets/banner.svg" alt="Umbra" width="660"/>
+<img src="assets/logo/banner.svg" alt="Umbra" width="660"/>
 
 </div>
 
@@ -32,6 +32,15 @@
 Every LLM has a hard limit on how much it can see at once — and every token costs money. The bigger your project, the longer your session, the faster you hit that wall.
 
 Umbra solves this. It runs as a background daemon, connects to any LLM provider, and autonomously handles coding tasks — while keeping context usage under control through layered automatic compression, smart caching, and session compaction. Work on large codebases across long sessions without burning through your budget.
+
+---
+
+## Screenshots
+
+<div align="center">
+<!-- screenshots go here -->
+<!-- <img src="assets/screenshots/tui-main.png" alt="TUI" width="800"/> -->
+</div>
 
 ---
 
