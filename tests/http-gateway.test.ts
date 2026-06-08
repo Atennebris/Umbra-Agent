@@ -551,6 +551,11 @@ describe('HttpGateway', () => {
     const runtimeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-provider-gateway-'));
     createdDirs.push(runtimeDir);
     process.env.UMBRA_HOME = runtimeDir;
+
+    const memoryManager = new MemoryManager(createTestEmbedder());
+    memoryManager.initialize();
+    setMemoryManagerForTests(memoryManager);
+
     setProviderCatalogForTests(
       new DefaultProviderCatalog({
         modelsRegistry: new ModelsRegistry({
