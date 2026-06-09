@@ -23,7 +23,7 @@
 
 <div align="center">
 
-<img src="assets/logo/banner.svg" alt="Umbra" width="660"/>
+<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/logo/banner.svg" alt="Umbra" width="660"/>
 
 </div>
 
@@ -53,11 +53,11 @@ The autonomous loop is there too — Umbra can run tasks end-to-end without baby
 
 <div align="center">
 
-<img src="assets/screenshots/1.png" width="310" alt="Startup screen"/>&nbsp;<img src="assets/screenshots/2.png" width="400" alt="Daemon boot"/>
+<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/screenshots/1.png" width="310" alt="Startup screen"/>&nbsp;<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/screenshots/2.png" width="400" alt="Daemon boot"/>
 <br>
-<img src="assets/screenshots/4.png" width="423" alt="Provider setup"/>&nbsp;<img src="assets/screenshots/5.png" width="295" alt="Theme picker"/>
+<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/screenshots/4.png" width="423" alt="Provider setup"/>&nbsp;<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/screenshots/5.png" width="295" alt="Theme picker"/>
 <br>
-<img src="assets/screenshots/3.png" width="720" alt="Command reference"/>
+<img src="https://raw.githubusercontent.com/Atennebris/Umbra-Agent/main/assets/screenshots/3.png" width="720" alt="Command reference"/>
 
 </div>
 
