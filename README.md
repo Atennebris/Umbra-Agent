@@ -39,34 +39,15 @@ Umbra solves this. It runs as a background daemon, connects to any LLM provider,
 
 <div align="center">
 
-<table>
-  <tr>
-    <td align="center"><img src="assets/screenshots/1.png" alt="Startup" width="370"/></td>
-    <td align="center"><img src="assets/screenshots/2.png" alt="Daemon boot" width="370"/></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Startup screen</sub></td>
-    <td align="center"><sub>Daemon boot</sub></td>
-  </tr>
-</table>
-
-<br>
-
-<img src="assets/screenshots/3.png" alt="Command reference" width="760"/>
-<br><sub>Command reference · <code>/help</code></sub>
+<img src="assets/screenshots/1.png" width="310" alt="Startup screen"/>&nbsp;<img src="assets/screenshots/2.png" width="400" alt="Daemon boot"/>
 
 <br><br>
 
-<table>
-  <tr>
-    <td align="center"><img src="assets/screenshots/4.png" alt="Provider setup" width="370"/></td>
-    <td align="center"><img src="assets/screenshots/5.png" alt="Theme picker" width="370"/></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Provider setup</sub></td>
-    <td align="center"><sub>Theme picker</sub></td>
-  </tr>
-</table>
+<img src="assets/screenshots/4.png" width="423" alt="Provider setup"/>&nbsp;<img src="assets/screenshots/5.png" width="295" alt="Theme picker"/>
+
+<br><br>
+
+<img src="assets/screenshots/3.png" width="720" alt="Command reference"/>
 
 </div>
 
