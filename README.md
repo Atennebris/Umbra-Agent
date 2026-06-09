@@ -40,13 +40,9 @@ Umbra solves this. It runs as a background daemon, connects to any LLM provider,
 <div align="center">
 
 <img src="assets/screenshots/1.png" width="310" alt="Startup screen"/>&nbsp;<img src="assets/screenshots/2.png" width="400" alt="Daemon boot"/>
-
-<br><br>
-
+<br>
 <img src="assets/screenshots/4.png" width="423" alt="Provider setup"/>&nbsp;<img src="assets/screenshots/5.png" width="295" alt="Theme picker"/>
-
-<br><br>
-
+<br>
 <img src="assets/screenshots/3.png" width="720" alt="Command reference"/>
 
 </div>

@@ -1204,6 +1204,7 @@ Mode changes take effect on the next message send.
 
 | Command | Interaction |
 |---|---|
+| `/mem` | ↕ Memory menu — citations panel toggle, memory settings |
 | `/memories` | ↕ Memory settings menu |
 | `/mem on` | Show memory citations panel after each response |
 | `/mem off` | Hide memory citations panel |
