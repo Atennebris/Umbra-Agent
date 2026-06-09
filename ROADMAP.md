@@ -667,3 +667,20 @@
 - [ ] `test_cases:` in frontmatter: `input_variables`, `expected_contains`, `expected_not_contains`; `umbra prompt test <name>` — CI-compatible exit codes
 - [ ] `umbra prompt optimize <name> --examples <n>` — analyzes last N uses and proposes an improved version as `v<N+1>.md` for user review (never auto-applied)
 
+---
+
+## Phase 28: Epistemic Layer (Agent Honesty & Confidence Engine)
+
+> The agent stops speaking with equal confidence about what it knows for certain and what it's guessing. This is the primary mechanism against hallucinations — forcing the agent to explicitly separate knowledge, inference, and unknowns.
+
+- [ ] `ConfidenceReport` before each significant action (destructive tool, file edit, `git.commit`): `{action, confidence: 0.0–1.0, basis, unknowns}`
+- [ ] If `confidence < 0.6`: forced verification step (read/search tool call) before proceeding — no blind assumptions
+- [ ] Full report in debug channel; TUI shows only brief `⚠ low confidence` before destructive actions
+- [ ] System prompt requires epistemic markers: `[VERIFIED from <source>]`, `[INFERRED from context]`, `[NEEDS_VERIFICATION]`, `[STALE — last checked >N days]`
+- [ ] TUI renders markers in color: green (verified), yellow (inferred), red (needs verification)
+- [ ] SQLite `domain_error_rates` table: tracks success/failure per domain (code_gen, search, config, web)
+- [ ] If `failure_rate > 0.4` in a domain: auto-raise `required_confidence` and add an extra verify step for that domain
+- [ ] `umbra stats domains` — domain error rates diagnostic table
+- [ ] Per-run `uncertainty_budget` (default 3 allowed `NEEDS_VERIFICATION` actions): on budget exceeded, run switches to `plan` mode and asks the user instead of continuing blindly
+- [ ] `umbra config set uncertainty_budget <n>` — `0` for paranoid mode, higher values for maximum autonomy
+
