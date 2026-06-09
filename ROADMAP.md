@@ -1,5 +1,15 @@
 # Umbra — Project Roadmap
 
+## The Goal
+
+1. **Remembers** everything about your projects and preferences — and knows when that memory is stale.
+2. **Learns** from its mistakes, creates its own tools, and versions them like code.
+3. **Works proactively** while you sleep — with a full audit log and the ability to review every action.
+4. **Speaks honestly** — explicitly separates what it knows for certain from what it's unsure about.
+5. **Saves resources** — routes between local and cloud models based on the real cost of each task.
+6. **Recovers** from failures without losing progress.
+7. **Accessible** from the terminal, web, messengers, and external tools.
+
 ---
 
 ## Phase 0: Foundation ✅
