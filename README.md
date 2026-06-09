@@ -29,7 +29,7 @@
 
 ---
 
-AI coding agent focused on saving tokens and getting the job done. Works with any LLM provider — including local models.
+AI coding agent focused on saving tokens and autonomous task execution. Works with any LLM provider — including local models.
 
 ---
 

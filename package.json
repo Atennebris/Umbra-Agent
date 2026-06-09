@@ -1,7 +1,7 @@
 {
   "name": "umbra-agent",
   "version": "0.1.0",
-  "description": "AI coding agent focused on saving tokens and getting the job done. Works with any LLM provider, including local models.",
+  "description": "AI coding agent focused on saving tokens and autonomous task execution. Works with any LLM provider, including local models.",
   "type": "module",
   "bin": {
     "umbra": "./bin/umbra.js"
