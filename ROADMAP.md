@@ -522,3 +522,148 @@
 - [ ] `fs.search_internal` tool: semantic search within a single file — finds logic by meaning across 10,000+ lines
 - [ ] `fs.patch_targeted` tool: replace specific line ranges (`range: [start, end]`) — faster and more reliable than Unified Diff for massive files
 
+---
+
+## Phase 22: Self-Evolution & Skill Synthesis
+
+> The agent grows smarter with every completed task — successful strategies are crystallized into reusable skills, and failures are tracked to avoid repeating mistakes.
+
+**Automatic Skill Extraction**
+- [ ] On `/goal` success: agent analyzes the tool call chain and synthesizes a reusable `SKILL.md` in `.umbra/skills/<name>/`
+- [ ] `/learn` command — interactive or automatic skill creation from the cleaned-up success log
+- [ ] Paths, filenames, and arguments templated with placeholders: `{{projectPath}}`, `{{targetFile}}`, `{{branchName}}`
+- [ ] Skill versioning: each edit creates `.umbra/skills/<name>/versions/v<N>.md`; `umbra skill rollback <name>` for rollback
+- [ ] Skill dependencies: `requires:` field in YAML frontmatter; orchestrator builds and executes dependency graph
+- [ ] Optional `smoke.sh` test harness per skill — run before registering in the global registry
+- [ ] SQLite `skill_runs` table: duration, token cost, success rate — agent prefers high-scoring skills
+
+**Self-Healing & Reflection**
+- [ ] Plan-Act-Observe-Reflect loop: explicit Reflect step triggered on ≥ 2 identical `tool_call_failed` in one run
+- [ ] On repeated failure: agent pauses, analyzes tool documentation, and revises its strategy
+- [ ] Failure Pattern DB (`failure_patterns` table): tool, error type, frequency, last occurrence, recommended fix
+- [ ] Auto-upsert on each `tool_call_failed`; marked "resolved" on subsequent success of the same operation
+
+**Global Skill Registry**
+- [ ] Global registry in `~/.umbra/skills/` — skill promoted only after passing `smoke.sh` in ≥ 2 different projects
+- [ ] Skill scoring: `(success_rate × 0.6) + (token_efficiency × 0.3) + (recency × 0.1)`; top skills appear first in TUI `/` autocomplete
+- [ ] `umbra skill list`, `umbra skill show <name>`, `umbra skill remove <name>`
+
+---
+
+## Phase 23: Proactivity & Global Scheduler
+
+> A shift from "reactive chat" (waiting for commands) to "proactive agent" (knows what to do on its own in the morning, evening, or when CI fails).
+
+**Daemon Heartbeat**
+- [ ] Periodic daemon wake-up every 15–60 minutes via `croner` (no user interaction required)
+- [ ] `HEARTBEAT.md` parser: declarative YAML blocks with `schedule` (cron expression), `task`, `allowed_tools`, `notify_on: always|failure|never`
+- [ ] Tasks whose schedule matches the current time are queued automatically
+
+**Event-Driven Triggers**
+- [ ] Git Hook: `~/.umbra/hooks/post-receive` registers a daemon event on every `git push` in trusted projects — auto-runs tests or linter
+- [ ] File System Watcher (`umbra watch <glob>`): triggers a task from `HEARTBEAT.md` `on_file_change:` section on file change
+- [ ] CI Failure Hook: webhook receiver (`POST /daemon/ci-event`) — auto-starts a diagnostic run on `status: failed`
+
+**Unattended Safety**
+- [ ] `allowed_tools:` required in every `HEARTBEAT.md` task; default: `[fs.read, search.rg, shell.exec(readonly), git.status, web.fetch]`
+- [ ] Destructive tools (`fs.write`, `git.commit`) require explicit `allow_destructive: true` in the task
+- [ ] Emergency Kill Switch: `umbra heartbeat stop` or touch `~/.umbra/HEARTBEAT_PAUSED` — cancels all active unattended tasks immediately
+
+**Autonomous Monitoring & Digest**
+- [ ] Watcher mode: monitors logs and git changes, notifies only on critical events via notification log
+- [ ] Daily outcome digest of unattended work → `~/.umbra/heartbeat-digest/<YYYY-MM-DD>.md`; view via `umbra heartbeat digest [--date]`
+
+**Global Task Calendar**
+- [ ] SQLite `scheduled_tasks` table: `id`, `cron_expr`, `project_path`, `task`, `allowed_tools`, `last_run`, `next_run`, `status`
+- [ ] `umbra schedule add "<cron>" "<task>"`, `umbra schedule list`, `umbra schedule delete <id>`, `umbra schedule run <id>`
+
+---
+
+## Phase 24: Semantic Web Intelligence (Semantic Browsing)
+
+> Traditional scraping breaks constantly. Using the Accessibility Tree lets the agent "see" a site as a structured element tree, not a tag soup. Covers interactive SPAs where `web.fetch` isn't enough.
+
+> All browser features are behind `UMBRA_BROWSER_ENABLED=1` and an optional peer dependency. Without Playwright installed, graceful degradation to `web.fetch`.
+
+- [ ] Playwright integration (optional peer) for Accessibility Tree capture
+- [ ] Compact text representation passed to the model: buttons, inputs, headings, links with `aria-label`/`id` — not raw HTML
+- [ ] Snapshot token budget cap (default 4 000 tokens) with automatic compression
+- [ ] Browser tools: `browser.open`, `browser.click`, `browser.type`, `browser.snapshot`, `browser.back`, `browser.screenshot`
+- [ ] Multi-step action chains with TUI confirmation per step or fully automated in `--exec` mode
+- [ ] Browser session persistence in `~/.umbra/browser/sessions/<session_id>/` (cookies, localStorage)
+- [ ] Auto-detect forms from Accessibility Tree; agent fills by intent ("fill the login form"), not raw selectors
+- [ ] `umbra browser record` — records an interactive session and exports it as a `SKILL.md`
+- [ ] `browser.screenshot()` → Vision model for canvas, PDF viewers, and captcha detection
+- [ ] Auto-switch to Vision when Accessibility Tree is incomplete (`aria_hidden: true` or no interactive elements)
+- [ ] Throttle/captcha detection (429, CAPTCHA in tree) → graceful stop with user notification instead of crash
+- [ ] Human-like jitter between actions in unattended mode
+
+---
+
+## Phase 25: Cognitive Dashboard & Meta-Intelligence
+
+> The user sees the agent's "inner workings" — how it thinks, where it spends resources, and how well it understands the current project. The agent also auto-selects the optimal model based on task classification.
+
+**Intelligence Dashboard (TUI)**
+- [ ] `/mastermind` panel: project mastery level (% files read/modified of total repo), active skills with metrics (calls/week, avg success rate, avg cost)
+- [ ] Project Health Score 0–100: repo map coverage, `MEMORY.md` freshness, skill success rates, avg request cost — displayed in TUI status bar next to provider
+- [ ] Knowledge Staleness Detector: `MEMORY.md` facts older than threshold (default 30 days) in volatile domains (package versions, APIs, CI) are auto-tagged `[STALE]` and flagged for update
+
+**Cost-Aware Model Router**
+- [ ] Task classification before each run: `complexity: low|medium|high` × `domain: search|code_gen|analysis|creative|system_admin`
+- [ ] Configurable routing matrix in `~/.umbra/routing-policy.json` — no hardcoded model names
+- [ ] Budget Guard: if estimated run cost exceeds `maxCostUsd`, ask user confirmation before proceeding
+- [ ] Routing decision shown in TUI: `→ model-name (low complexity, search)`
+
+**Project Knowledge Graph**
+- [ ] SQLite `concept_graph` table: `entity_a`, `relation`, `entity_b`, `confidence`, `source_file`, `last_seen`
+- [ ] Relation types: `depends_on`, `implements`, `calls`, `configures`, `uses_env_var`
+- [ ] Auto-populated on each `fs.read` / AST analysis from imports, requires, and Zod schemas
+- [ ] `graph.query(entity)` tool: returns all neighbors — "what depends on this function", "which files use this env var"
+- [ ] `/graph <entity>` TUI command: ASCII graph of nearest connections (depth=2) rendered in terminal
+
+---
+
+## Phase 26: Multi-platform & Remote Presence
+
+> Umbra CLI is available wherever the user prefers. External tools (VS Code, browser) can talk to the daemon through a documented API.
+
+> Security invariant: daemon still listens only on `127.0.0.1`. External access goes through an encrypted tunnel/auth-proxy, never an open port.
+
+**REST API for External Tools**
+- [ ] Documented daemon API: `GET /daemon/status`, `POST /daemon/run`, `GET /daemon/sessions`, `GET /daemon/sessions/:id/events`
+- [ ] OpenAPI / JSON Schema spec in `docs/daemon-api.json` (generated from Zod contracts)
+- [ ] WebSocket channel `/daemon/ws` — live `RunEvent` stream subscription without polling
+
+**Messenger Bridges**
+- [ ] Telegram Bridge: bot webhook → `POST /daemon/run` → reply to chat
+- [ ] Discord Bridge: slash commands via Discord Bot API
+- [ ] Secure auth: only whitelisted `chat_id` / user IDs from `~/.umbra/bridges.json` can control the daemon
+- [ ] Supported commands: `/status`, `/run <task>`, `/digest`, `/stop`
+
+**Remote Web UI**
+- [ ] Static SPA (Vite + React) for monitoring: active tasks, logs, provider status, usage stats
+- [ ] `umbra webui` → opens browser at `http://127.0.0.1:<auto-port>`
+- [ ] WebSocket connection to daemon, auth via one-time token
+- [ ] Read-only by default; write mode (running tasks) requires TUI confirmation
+
+**Knowledge Sync**
+- [ ] `umbra sync export` — AES-256-GCM encrypted archive of `MEMORY.md`, verified skills, `routing-policy.json`
+- [ ] `umbra sync import <file>` — unpack and merge (skills: append; memory: merge by key; policy: user chooses override / keep / merge)
+- [ ] Sync key stored in `~/.umbra/sync.key`, generated on first use
+
+---
+
+## Phase 27: Prompt Engineering as Code (Prompt Registry & Optimization)
+
+> Prompts are executable code. They should be versioned, tested, and optimized like any other code — not hardcoded in source files.
+
+- [ ] Prompts stored in `.umbra/prompts/<name>.md` with YAML frontmatter: `name`, `version`, `description`, `variables`, `test_cases`
+- [ ] `{{variable}}` templating with typed variables (string, number, list) and optional defaults
+- [ ] Runtime resolution: project `.umbra/prompts/` + global `~/.umbra/prompts/` merged with built-ins (local takes priority)
+- [ ] `umbra prompt list`, `umbra prompt show <name>`, `umbra prompt edit <name>`
+- [ ] Auto-snapshot on change: `.umbra/prompts/<name>/versions/v<N>.md`
+- [ ] `umbra prompt rollback <name>` and `umbra prompt diff <name> v1 v2`
+- [ ] `test_cases:` in frontmatter: `input_variables`, `expected_contains`, `expected_not_contains`; `umbra prompt test <name>` — CI-compatible exit codes
+- [ ] `umbra prompt optimize <name> --examples <n>` — analyzes last N uses and proposes an improved version as `v<N+1>.md` for user review (never auto-applied)
+
