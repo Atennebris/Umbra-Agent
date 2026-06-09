@@ -29,9 +29,23 @@
 
 ---
 
-Every LLM has a hard limit on how much it can see at once — and every token costs money. The bigger your project, the longer your session, the faster you hit that wall.
+An AI coding agent that stretches your token budget — not your patience. Built for large codebases and long sessions, without burning through your plan.
 
-Umbra solves this. It runs as a background daemon, connects to any LLM provider, and autonomously handles coding tasks — while keeping context usage under control through layered automatic compression, smart caching, and session compaction. Work on large codebases across long sessions without burning through your budget.
+---
+
+## The Problem
+
+Every LLM subscription has a token limit — and it runs out faster than you think. The bigger your project, the longer your session, the more you hit the wall: the model loses context mid-task, responses degrade, and you either start over or pay for a bigger plan.
+
+Most AI coding tools make this worse. They dump entire files into the prompt, keep full session history forever, and never compress anything. You burn through your daily or monthly limit doing work that should have cost a fraction of that.
+
+## The Solution
+
+Umbra is built around one goal: **keep the model effective without wasting tokens.**
+
+It builds a compact AST map of your project instead of sending raw files, compresses tool output and session history automatically, and recalls relevant past work from a local vector database — injecting only what actually matters for the current task. You get a model that stays coherent across long sessions and large codebases, at a fraction of the token cost.
+
+The autonomous loop is there too — Umbra can run tasks end-to-end without babysitting — but the core value is that it stops burning your budget on context you don't need.
 
 ---
 
