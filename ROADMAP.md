@@ -16,10 +16,10 @@
 
 > Daemon runs stably in the background, CLI responds instantly to commands without delays.
 
-- [X] Project initialization (TypeScript, Biome, Vitest, pnpm)
-- [X] Daemon (PM2) with hidden local HTTP server (`127.0.0.1:8080`)
-- [X] CLI client communicating with daemon via `POST` requests
-- [X] Lazy-loading architecture — heavy modules load only on demand
+- [X] ~~Project initialization (TypeScript, Biome, Vitest, pnpm)~~
+- [X] ~~Daemon (PM2) with hidden local HTTP server (`127.0.0.1:8080`)~~
+- [X] ~~CLI client communicating with daemon via `POST` requests~~
+- [X] ~~Lazy-loading architecture — heavy modules load only on demand~~
 
 ---
 
@@ -27,14 +27,14 @@
 
 > Professional UX from the first launch: a ready-made project rules template in one command, and a built-in health monitor keeping the system in check.
 
-- [X] Core CLI commands: `umbra start`, `umbra stop`, `umbra status`, `umbra task add`
-- [X] `umbra init` — generates `AGENTS.md` template and base `check.sh` in the current directory
-- [X] Terminal UI with Umbra's original dark/shadow theme
-- [X] Markdown rendering with syntax highlighting and model response streaming
-- [X] `/clear` command — clears transcript and starts a new session
-- [X] Drag-and-drop file path parsing and local image to Base64 conversion (Vision support)
-- [X] `umbra doctor` — checks filesystem access, ports, SQLite, and daemon state
-- [X] `umbra debug` — live monitor for daemon/CLI/TUI/provider events with log output
+- [X] ~~Core CLI commands: `umbra start`, `umbra stop`, `umbra status`, `umbra task add`~~
+- [X] ~~`umbra init` — generates `AGENTS.md` template and base `check.sh` in the current directory~~
+- [X] ~~Terminal UI with Umbra's original dark/shadow theme~~
+- [X] ~~Markdown rendering with syntax highlighting and model response streaming~~
+- [X] ~~`/clear` command — clears transcript and starts a new session~~
+- [X] ~~Drag-and-drop file path parsing and local image to Base64 conversion (Vision support)~~
+- [X] ~~`umbra doctor` — checks filesystem access, ports, SQLite, and daemon state~~
+- [X] ~~`umbra debug` — live monitor for daemon/CLI/TUI/provider events with log output~~
 
 ---
 
@@ -42,18 +42,18 @@
 
 > Isolated long-term agent experience storage. No service files polluting the user's project directories.
 
-- [X] Service filesystem auto-init (`~/.umbra/` layout, project-scoped isolation)
-- [X] Global SQLite database with vector search (`sqlite-vec`)
-- [X] Local text embeddings via Transformers.js (auto-downloaded `all-MiniLM-L6-v2`, ~90MB)
-- [X] Typed JSONL session events with stable schema (`id`, `sessionId`, `projectPath`, `timestamp`, `type`, `payload`)
-- [X] `AGENTS.md` rules parsing and `MEMORY.md` read/write per project
-- [X] Full thread lifecycle: `thread_start`, `thread_list`, `thread_resume`, `thread_fork`, `thread_archive`, `thread_unarchive`
-- [X] TUI session picker with `/sessions`, `/resume`, `/sessions fork` slash commands
-- [X] `/clear` bound to a new thread — previous thread preserved in history
-- [X] Explicit memory controls: `use_memories` / `generate_memories` flags per runtime/project/thread
-- [X] Memory provenance and citations — source metadata visible in responses and debug trace
-- [X] Safe memory reset without deleting session logs
-- [X] Session compaction pipeline and import/export support
+- [X] ~~Service filesystem auto-init (`~/.umbra/` layout, project-scoped isolation)~~
+- [X] ~~Global SQLite database with vector search (`sqlite-vec`)~~
+- [X] ~~Local text embeddings via Transformers.js (auto-downloaded `all-MiniLM-L6-v2`, ~90MB)~~
+- [X] ~~Typed JSONL session events with stable schema (`id`, `sessionId`, `projectPath`, `timestamp`, `type`, `payload`)~~
+- [X] ~~`AGENTS.md` rules parsing and `MEMORY.md` read/write per project~~
+- [X] ~~Full thread lifecycle: `thread_start`, `thread_list`, `thread_resume`, `thread_fork`, `thread_archive`, `thread_unarchive`~~
+- [X] ~~TUI session picker with `/sessions`, `/resume`, `/sessions fork` slash commands~~
+- [X] ~~`/clear` bound to a new thread — previous thread preserved in history~~
+- [X] ~~Explicit memory controls: `use_memories` / `generate_memories` flags per runtime/project/thread~~
+- [X] ~~Memory provenance and citations — source metadata visible in responses and debug trace~~
+- [X] ~~Safe memory reset without deleting session logs~~
+- [X] ~~Session compaction pipeline and import/export support~~
 
 ---
 
@@ -61,12 +61,12 @@
 
 > Eliminates hallucinations on large projects and drastically reduces token usage.
 
-- [X] Tree-sitter AST integration (TypeScript, JavaScript, Python, Go, GML, and more)
-- [X] Repo Map generator — project file structure and symbol relationships
-- [X] Code compression — sends only function/class signatures, not full file bodies
-- [X] Auto token counting for outgoing prompts
-- [X] `/compact` command — forces summarization of accumulated context
-- [X] Universal text fallback for unknown file types — bounded context packet with top symbols, snippets, and token estimate
+- [X] ~~Tree-sitter AST integration (TypeScript, JavaScript, Python, Go, GML, and more)~~
+- [X] ~~Repo Map generator — project file structure and symbol relationships~~
+- [X] ~~Code compression — sends only function/class signatures, not full file bodies~~
+- [X] ~~Auto token counting for outgoing prompts~~
+- [X] ~~`/compact` command — forces summarization of accumulated context~~
+- [X] ~~Universal text fallback for unknown file types — bounded context packet with top symbols, snippets, and token estimate~~
 
 ### Language Coverage
 
@@ -142,9 +142,9 @@
 | DOCX | `.docx` | partial (text extraction) |
 | Lockfiles | `yarn.lock`, `Cargo.lock`, `Gemfile.lock`, `composer.lock` | partial (version extraction) |
 
-- [X] New languages are added only when needed by the Umbra stack
-- [X] Each new language is either brought to full support or explicitly marked `partial` / `unsupported`
-- [X] Coverage matrix and tests updated with every new language addition
+- [X] ~~New languages are added only when needed by the Umbra stack~~
+- [X] ~~Each new language is either brought to full support or explicitly marked `partial` / `unsupported`~~
+- [X] ~~Coverage matrix and tests updated with every new language addition~~
 
 ---
 
@@ -152,17 +152,17 @@
 
 > Always up-to-date model support without hardcoding — extensible provider configuration for any API-compatible service.
 
-- [X] Dynamic model registry with live capabilities fetch (tool/vision/context flags — no hardcoded values)
-- [X] OpenAI client with structured output support (Zod)
-- [X] Anthropic client
-- [X] Local network client (Ollama, LM Studio)
-- [X] `ProviderTypeSpec` registry — `value`, `label`, `default_url`, `needs_key`, `cloud`, `aliases`
-- [X] Provider profiles with full CRUD: list, create, update, delete, test, capabilities
-- [X] Multiple saved connections per provider type with per-profile model selection and global fallback
-- [X] Enable/disable provider profiles without deletion — explicit `connected` / `available` / `unavailable` status
-- [X] Graceful degradation for broken profiles — auto-fallback to valid connection on startup
-- [X] Optional/module-gated providers — module absent means provider unavailable, no crash
-- [X] CLI/TUI surface for managing provider profiles and switching active model
+- [X] ~~Dynamic model registry with live capabilities fetch (tool/vision/context flags — no hardcoded values)~~
+- [X] ~~OpenAI client with structured output support (Zod)~~
+- [X] ~~Anthropic client~~
+- [X] ~~Local network client (Ollama, LM Studio)~~
+- [X] ~~`ProviderTypeSpec` registry — `value`, `label`, `default_url`, `needs_key`, `cloud`, `aliases`~~
+- [X] ~~Provider profiles with full CRUD: list, create, update, delete, test, capabilities~~
+- [X] ~~Multiple saved connections per provider type with per-profile model selection and global fallback~~
+- [X] ~~Enable/disable provider profiles without deletion — explicit `connected` / `available` / `unavailable` status~~
+- [X] ~~Graceful degradation for broken profiles — auto-fallback to valid connection on startup~~
+- [X] ~~Optional/module-gated providers — module absent means provider unavailable, no crash~~
+- [X] ~~CLI/TUI surface for managing provider profiles and switching active model~~
 
 ---
 
@@ -170,20 +170,20 @@
 
 > Safety and efficiency — tools are isolated, and the router rejects any malformed or dangerous arguments before execution.
 
-- [X] Zod schemas for strict JSON validation of all AI tool calls
-- [X] Tool Runner — central call router
-- [X] `ToolSpec` registry with risk class, read-only flag, concurrency-safe flag, and permission policy
-- [X] Tool presets: `chat-readonly`, `agent-default`, `exec-full`
-- [X] Machine-readable result schema on every tool (not free text)
-- [X] `fs.list`, `fs.read`, `fs.write`, `fs.edit` (Unified Diff patch application)
-- [X] `shell.exec` — terminal command execution
-- [X] `search.rg` — ripgrep wrapper for local repository text search with grouped output (file buckets, snippets, match counts, truncation metadata)
-- [X] `search.files` — ignore-aware file listing with Node.js fallback, hidden/dist/node_modules policy
-- [X] Fuzzy file search over project paths
-- [X] External binary health/status layer — availability check, version, path source, missing reasons, custom path override
-- [X] `git.status`, `git.diff`, `git.apply`, `git.commit`
-- [X] Central permission hook before every tool call
-- [X] Destructive vs non-destructive tool separation at contract level
+- [X] ~~Zod schemas for strict JSON validation of all AI tool calls~~
+- [X] ~~Tool Runner — central call router~~
+- [X] ~~`ToolSpec` registry with risk class, read-only flag, concurrency-safe flag, and permission policy~~
+- [X] ~~Tool presets: `chat-readonly`, `agent-default`, `exec-full`~~
+- [X] ~~Machine-readable result schema on every tool (not free text)~~
+- [X] ~~`fs.list`, `fs.read`, `fs.write`, `fs.edit` (Unified Diff patch application)~~
+- [X] ~~`shell.exec` — terminal command execution~~
+- [X] ~~`search.rg` — ripgrep wrapper for local repository text search with grouped output (file buckets, snippets, match counts, truncation metadata)~~
+- [X] ~~`search.files` — ignore-aware file listing with Node.js fallback, hidden/dist/node_modules policy~~
+- [X] ~~Fuzzy file search over project paths~~
+- [X] ~~External binary health/status layer — availability check, version, path source, missing reasons, custom path override~~
+- [X] ~~`git.status`, `git.diff`, `git.apply`, `git.commit`~~
+- [X] ~~Central permission hook before every tool call~~
+- [X] ~~Destructive vs non-destructive tool separation at contract level~~
 
 ---
 
@@ -191,28 +191,28 @@
 
 > The agent becomes truly autonomous — give it a task and it runs tests, catches bugs, and rewrites code on its own until done.
 
-- [X] **Planning Mode** — AI reads AST and produces a JSON plan without executing any tools or editing code
-- [X] **Agent Mode** — interactive working mode with tools resolved by policy and task intent
-- [X] Each mode has its own execution contract: allowed tools, confirmation rules, edit/shell/git permissions, stop-guards
-- [X] No mode inherits the full tool surface without filtering — no mode bleed
-- [X] **`--exec` autonomous mode** — patch loop via `fs.edit` with auto-run of project-local `check.sh` / `check.ps1`
-- [X] If `check.sh` / `check.ps1` is missing → stop with explicit reason (exec mode requires a check script)
-- [X] On `Exit Code 1` → capture `stderr`, build new prompt with the error, auto-retry
-- [X] On `Exit Code 0` → task complete: auto-commit and write to project `MEMORY.md`
-- [X] `--exec` has a separate policy profile — edits/run/check/fix allowed automatically within sandbox and permission rules
-- [X] Time-boxing — interrupt a hung task by timer (e.g. `--time 30m`)
-- [X] Task lifecycle: create, status, output, stop, restart for background and long-running tasks
+- [X] ~~**Planning Mode** — AI reads AST and produces a JSON plan without executing any tools or editing code~~
+- [X] ~~**Agent Mode** — interactive working mode with tools resolved by policy and task intent~~
+- [X] ~~Each mode has its own execution contract: allowed tools, confirmation rules, edit/shell/git permissions, stop-guards~~
+- [X] ~~No mode inherits the full tool surface without filtering — no mode bleed~~
+- [X] ~~**`--exec` autonomous mode** — patch loop via `fs.edit` with auto-run of project-local `check.sh` / `check.ps1`~~
+- [X] ~~If `check.sh` / `check.ps1` is missing → stop with explicit reason (exec mode requires a check script)~~
+- [X] ~~On `Exit Code 1` → capture `stderr`, build new prompt with the error, auto-retry~~
+- [X] ~~On `Exit Code 0` → task complete: auto-commit and write to project `MEMORY.md`~~
+- [X] ~~`--exec` has a separate policy profile — edits/run/check/fix allowed automatically within sandbox and permission rules~~
+- [X] ~~Time-boxing — interrupt a hung task by timer (e.g. `--time 30m`)~~
+- [X] ~~Task lifecycle: create, status, output, stop, restart for background and long-running tasks~~
 
 ---
 
 ## Phase 7: Security, MCP & Plugin System ✅
 
-- [X] Interactive CLI permission prompts — Allow / Deny / Always Allow before dangerous actions
-- [X] Permission subsystem: rules, decision logging, mode-aware behavior (`PermissionManager`)
-- [X] MCP client for connecting external tools (stdio transport, JSON-RPC)
-- [X] MCP discovery: tool/resource listing, resource reading, auth flow
-- [X] Dynamic plugin loading from `plugins/` directory
-- [X] Plugin lifecycle: discovery, install, load, reload, version/update policy
+- [X] ~~Interactive CLI permission prompts — Allow / Deny / Always Allow before dangerous actions~~
+- [X] ~~Permission subsystem: rules, decision logging, mode-aware behavior (`PermissionManager`)~~
+- [X] ~~MCP client for connecting external tools (stdio transport, JSON-RPC)~~
+- [X] ~~MCP discovery: tool/resource listing, resource reading, auth flow~~
+- [X] ~~Dynamic plugin loading from `plugins/` directory~~
+- [X] ~~Plugin lifecycle: discovery, install, load, reload, version/update policy~~
 
 ---
 
@@ -221,68 +221,68 @@
 > Reduce session costs and interruptions, unify model access, and deliver a predictable UX on par with mature coding CLIs.
 
 **Local Gateway & Routing**
-- [X] Single outgoing LLM call point inside the daemon — shared adapter with retries, limits, and logging
-- [X] Format translation layer: internal Umbra contract ↔ provider payload
-- [X] Named routing chains: ordered list of profile + model with tiered fallback (e.g. subscription → cheap models → local)
-- [X] Auto-switch on 429s, network drops, and empty responses — reason written to log
-- [X] Deduplication of parallel identical requests
+- [X] ~~Single outgoing LLM call point inside the daemon — shared adapter with retries, limits, and logging~~
+- [X] ~~Format translation layer: internal Umbra contract ↔ provider payload~~
+- [X] ~~Named routing chains: ordered list of profile + model with tiered fallback (e.g. subscription → cheap models → local)~~
+- [X] ~~Auto-switch on 429s, network drops, and empty responses — reason written to log~~
+- [X] ~~Deduplication of parallel identical requests~~
 
 **Token Compression**
-- [X] Pre-LLM compression layer with configurable intensity: `off` / `lite` / `standard` / `aggressive`
-- [X] Terminal/tool output compression: `shell.exec`, `search.rg`, `git diff`, harness `stderr`
-- [X] Prose condensation and inter-turn deduplication (aligned with `/compact` and session compaction)
-- [X] Stacked pipeline: machine-block compression first, then light text condensation
-- [X] Mode-linked compression: `plan` minimal, `agent` balanced, `exec` aggressive on tool output
-- [X] Search result compression into ranked file groups with representative snippets
-- [X] Raw and compressed samples available in `umbra --debug` channel
+- [X] ~~Pre-LLM compression layer with configurable intensity: `off` / `lite` / `standard` / `aggressive`~~
+- [X] ~~Terminal/tool output compression: `shell.exec`, `search.rg`, `git diff`, harness `stderr`~~
+- [X] ~~Prose condensation and inter-turn deduplication (aligned with `/compact` and session compaction)~~
+- [X] ~~Stacked pipeline: machine-block compression first, then light text condensation~~
+- [X] ~~Mode-linked compression: `plan` minimal, `agent` balanced, `exec` aggressive on tool output~~
+- [X] ~~Search result compression into ranked file groups with representative snippets~~
+- [X] ~~Raw and compressed samples available in `umbra --debug` channel~~
 
 **Usage Tracking & Cost**
-- [X] Structured usage log in `~/.umbra/`: provider, model, token estimates, compression flag, chain route, errors
-- [X] Per-request normalized token counter: `input`, `output`, `reasoning`, `cache.read`, `cache.write`, `costUsd`
-- [X] Provider response normalization: OpenAI-compatible and Anthropic formats
-- [X] Cost estimate and "saved via compression/fallback" displayed in TUI
-- [X] Usage comparison panel: cost per session, model, and provider
+- [X] ~~Structured usage log in `~/.umbra/`: provider, model, token estimates, compression flag, chain route, errors~~
+- [X] ~~Per-request normalized token counter: `input`, `output`, `reasoning`, `cache.read`, `cache.write`, `costUsd`~~
+- [X] ~~Provider response normalization: OpenAI-compatible and Anthropic formats~~
+- [X] ~~Cost estimate and "saved via compression/fallback" displayed in TUI~~
+- [X] ~~Usage comparison panel: cost per session, model, and provider~~
 
 **Global CLI & Working Directory**
-- [X] Single `umbra` call from PATH (`pnpm link --global` / future installer), verified in `doctor`
-- [X] Explicit `cwd` behavior: auto-detect Git root or `--project-root` flag; consistent with `doctor` and TUI
+- [X] ~~Single `umbra` call from PATH (`pnpm link --global` / future installer), verified in `doctor`~~
+- [X] ~~Explicit `cwd` behavior: auto-detect Git root or `--project-root` flag; consistent with `doctor` and TUI~~
 
 **Permissions & Access Policies**
-- [X] `umbra permission` command: view rules, reset "always allow", switch modes (strict / on-demand / yolo)
-- [X] Current permission mode visible in TUI and `doctor`
-- [X] Tool presets (`chat-readonly`, `agent-default`, `exec-full`) aligned with displayed policy names
+- [X] ~~`umbra permission` command: view rules, reset "always allow", switch modes (strict / on-demand / yolo)~~
+- [X] ~~Current permission mode visible in TUI and `doctor`~~
+- [X] ~~Tool presets (`chat-readonly`, `agent-default`, `exec-full`) aligned with displayed policy names~~
 
 **Model Catalog**
-- [X] Deduplicated and normalized model list — one entry per logical model, grouped endpoint variants
-- [X] Unified capability card: context window, vision, tools, reasoning — sourced from registry API, not hardcoded
-- [X] Fix model selection UX bugs (flicker, duplicate rows on list refresh)
+- [X] ~~Deduplicated and normalized model list — one entry per logical model, grouped endpoint variants~~
+- [X] ~~Unified capability card: context window, vision, tools, reasoning — sourced from registry API, not hardcoded~~
+- [X] ~~Fix model selection UX bugs (flicker, duplicate rows on list refresh)~~
 
 **TUI & Agent Modes**
-- [X] `/clear` — resets visible transcript and starts a new thread/session on the backend
-- [X] Mode contract: `agent` (default), `plan`, `--exec` autonomous
-- [X] Plan mode: structured JSON plan output, no tool execution
-- [X] Metrics panel: token counts, response time, context fill %, cost estimate, compression indicator
-- [X] Visual separation of reasoning blocks vs regular text; toggle for reasoning visualization
-- [X] Double Esc to interrupt an active stream without exiting CLI
-- [X] Fix duplicate messages: `assistant_message` updates the last bubble instead of appending a new one
-- [X] Cursor style setting (blinking/static) saved in `~/.umbra/runtime-preferences.json`
-- [X] `@`-file references with fuzzy scoring and match highlights in input
-- [X] Human-readable tool call rows: action label + detail line for every tool type
-- [X] Full provider connection flow via step-by-step screen
+- [X] ~~`/clear` — resets visible transcript and starts a new thread/session on the backend~~
+- [X] ~~Mode contract: `agent` (default), `plan`, `--exec` autonomous~~
+- [X] ~~Plan mode: structured JSON plan output, no tool execution~~
+- [X] ~~Metrics panel: token counts, response time, context fill %, cost estimate, compression indicator~~
+- [X] ~~Visual separation of reasoning blocks vs regular text; toggle for reasoning visualization~~
+- [X] ~~Double Esc to interrupt an active stream without exiting CLI~~
+- [X] ~~Fix duplicate messages: `assistant_message` updates the last bubble instead of appending a new one~~
+- [X] ~~Cursor style setting (blinking/static) saved in `~/.umbra/runtime-preferences.json`~~
+- [X] ~~`@`-file references with fuzzy scoring and match highlights in input~~
+- [X] ~~Human-readable tool call rows: action label + detail line for every tool type~~
+- [X] ~~Full provider connection flow via step-by-step screen~~
 
 **Markdown Rendering**
-- [X] Full Markdown element set: headings, bold/italic/strikethrough, inline code, fenced code blocks with syntax highlighting, lists, blockquotes, horizontal rules, links (OSC 8 where supported)
-- [X] GFM tables with width-aware truncation and graceful degradation on narrow terminals
-- [X] Streaming without flicker; unclosed fenced blocks show a "still typing" visual state
-- [X] Mixed content: Markdown paragraphs alongside code blocks without breaking the parser
-- [X] Unified markdown pipeline — single source of truth from raw text to Ink render tree
-- [X] Shared syntax highlight engine with language aliases and guardrails (512 KB / 10,000 lines)
+- [X] ~~Full Markdown element set: headings, bold/italic/strikethrough, inline code, fenced code blocks with syntax highlighting, lists, blockquotes, horizontal rules, links (OSC 8 where supported)~~
+- [X] ~~GFM tables with width-aware truncation and graceful degradation on narrow terminals~~
+- [X] ~~Streaming without flicker; unclosed fenced blocks show a "still typing" visual state~~
+- [X] ~~Mixed content: Markdown paragraphs alongside code blocks without breaking the parser~~
+- [X] ~~Unified markdown pipeline — single source of truth from raw text to Ink render tree~~
+- [X] ~~Shared syntax highlight engine with language aliases and guardrails (512 KB / 10,000 lines)~~
 
 **Agent Behavior & Background Tasks**
-- [X] Built-in platform constraints: no silent "improvement" steps outside explicit requests
-- [X] Bootstrap profile: one-time context collection about user and project stack
-- [X] Notification channel for cron/daemon tasks: JSONL log at `~/.umbra/notifications.jsonl`
-- [X] `/full` flag — explicitly increases context limits and disables compression
+- [X] ~~Built-in platform constraints: no silent "improvement" steps outside explicit requests~~
+- [X] ~~Bootstrap profile: one-time context collection about user and project stack~~
+- [X] ~~Notification channel for cron/daemon tasks: JSONL log at `~/.umbra/notifications.jsonl`~~
+- [X] ~~`/full` flag — explicitly increases context limits and disables compression~~
 
 ---
 
@@ -290,15 +290,15 @@
 
 > External internet search is isolated from local `search.rg` (Phase 5). The agent gets controlled access to SERP backends only when explicitly enabled via `/web`.
 
-- [X] `/web` command — interactive menu for enabling/disabling web access, switching modes (`cached` / `live`), selecting provider, and viewing status
-- [X] `web.search` — returns ranked URLs and snippets; only exposed to the model when web mode is active
-- [X] `web.fetch` — reads a URL and returns clean Markdown (Jina Reader + raw HTML fallback); 404s and bad URLs return a structured failed-result instead of crashing the tool loop
-- [X] Model can chain `web.search` → `web.fetch` for live data retrieval
-- [X] Default provider: **DuckDuckGo** — zero configuration, works out of the box
-- [X] Auto-migration: providers requiring an API key with no key set → auto-switch to `ddg`
-- [X] Provider secrets stored in `~/.umbra/` and env only
-- [X] Permissions: `web.search` gated by `agent` / `exec` policy
-- [X] `umbra doctor` — web provider status section
+- [X] ~~`/web` command — interactive menu for enabling/disabling web access, switching modes (`cached` / `live`), selecting provider, and viewing status~~
+- [X] ~~`web.search` — returns ranked URLs and snippets; only exposed to the model when web mode is active~~
+- [X] ~~`web.fetch` — reads a URL and returns clean Markdown (Jina Reader + raw HTML fallback); 404s and bad URLs return a structured failed-result instead of crashing the tool loop~~
+- [X] ~~Model can chain `web.search` → `web.fetch` for live data retrieval~~
+- [X] ~~Default provider: **DuckDuckGo** — zero configuration, works out of the box~~
+- [X] ~~Auto-migration: providers requiring an API key with no key set → auto-switch to `ddg`~~
+- [X] ~~Provider secrets stored in `~/.umbra/` and env only~~
+- [X] ~~Permissions: `web.search` gated by `agent` / `exec` policy~~
+- [X] ~~`umbra doctor` — web provider status section~~
 
 ### Supported Providers
 
@@ -316,10 +316,10 @@
 
 > Full user control over the TUI color scheme. The selected theme is saved in `~/.umbra/runtime-preferences.json` and restored automatically on every launch.
 
-- [X] **40 built-in themes:** `umbra` (default), `aura`, `ayu`, `carbonfox`, `catppuccin`, `catppuccin-frappe`, `catppuccin-macchiato`, `cobalt2`, `cursor`, `dracula`, `everforest`, `flexoki`, `github`, `gruvbox`, `kanagawa`, `lucent-orng`, `material`, `matrix`, `mercury`, `monokai`, `nightowl`, `nord`, `one-dark`, `opencode`, `orng`, `osaka-jade`, `palenight`, `rosepine`, `solarized`, `synthwave84`, `tokyonight`, `vercel`, `vesper`, `zenburn`, `vscode-default`, `classic`, `dark-pro`, `pastel`, `hacker`, `retro`
-- [X] `/theme` command — interactive dialog with live search, arrow navigation, virtual window of 12 themes, `Enter` to apply, `Esc` to cancel
-- [X] Selected theme persisted in `runtime-preferences.json` and restored on each TUI launch
-- [X] Dynamic apply — new colors take effect immediately without restarting
+- [X] ~~**40 built-in themes:** `umbra` (default), `aura`, `ayu`, `carbonfox`, `catppuccin`, `catppuccin-frappe`, `catppuccin-macchiato`, `cobalt2`, `cursor`, `dracula`, `everforest`, `flexoki`, `github`, `gruvbox`, `kanagawa`, `lucent-orng`, `material`, `matrix`, `mercury`, `monokai`, `nightowl`, `nord`, `one-dark`, `opencode`, `orng`, `osaka-jade`, `palenight`, `rosepine`, `solarized`, `synthwave84`, `tokyonight`, `vercel`, `vesper`, `zenburn`, `vscode-default`, `classic`, `dark-pro`, `pastel`, `hacker`, `retro`~~
+- [X] ~~`/theme` command — interactive dialog with live search, arrow navigation, virtual window of 12 themes, `Enter` to apply, `Esc` to cancel~~
+- [X] ~~Selected theme persisted in `runtime-preferences.json` and restored on each TUI launch~~
+- [X] ~~Dynamic apply — new colors take effect immediately without restarting~~
 
 ---
 
@@ -327,14 +327,14 @@
 
 > The agent can legally switch between projects with user approval — preserving chat history while updating contextual knowledge (rules, memory).
 
-- [X] `fs.cd` tool — switches active `projectPath` within the current session
-- [X] On switch: auto-reloads `AGENTS.md`, updates Repo Map, connects the target folder's `MEMORY.md`
-- [X] TUI status bar updates CWD instantly after a successful switch
-- [X] Trusted paths registry (`~/.umbra/trusted-paths.json`) for persistent path permissions
-- [X] Current CWD auto-added to trusted paths on `umbra init`
-- [X] Trust prompt on `fs.cd` to an untrusted path — Allow / Deny / Allow Always via permission system
-- [X] "Allow Always" persistently saves the path to `trusted-paths.json`
-- [X] `umbra trust list` and `umbra trust remove <path>` CLI commands
+- [X] ~~`fs.cd` tool — switches active `projectPath` within the current session~~
+- [X] ~~On switch: auto-reloads `AGENTS.md`, updates Repo Map, connects the target folder's `MEMORY.md`~~
+- [X] ~~TUI status bar updates CWD instantly after a successful switch~~
+- [X] ~~Trusted paths registry (`~/.umbra/trusted-paths.json`) for persistent path permissions~~
+- [X] ~~Current CWD auto-added to trusted paths on `umbra init`~~
+- [X] ~~Trust prompt on `fs.cd` to an untrusted path — Allow / Deny / Allow Always via permission system~~
+- [X] ~~"Allow Always" persistently saves the path to `trusted-paths.json`~~
+- [X] ~~`umbra trust list` and `umbra trust remove <path>` CLI commands~~
 
 ---
 
@@ -387,47 +387,47 @@
 
 > Extreme token savings through smart history management and full control over the context window.
 
-- [X] `/goal <text>` — sets the active session goal (thread-scoped), displayed persistently in TUI status bar
-- [X] Mission Mode: when `/goal` is active (especially in `--exec`), goal is injected into the system prompt
-- [X] Completed goal auto-written to project `MEMORY.md` after `--exec` finishes
-- [X] Iterative compaction — "accumulative summary" algorithm: `Previous Summary + New Messages = Updated Summary` instead of full re-summarization
-- [X] Structured summary sections: Goals, Progress (done/files/failures), Next Steps, preserved tail
-- [X] `/compact settings` — dialog to configure a dedicated provider/model for compaction (separate from the main agent profile)
-- [X] Compaction provider/model saved in `runtime-preferences.json`; resets to Default without manual file editing
-- [X] TUI history read from SQLite only — visually infinite for the user, never disappears from screen
-- [X] LLM payload uses Sliding Window with `currentTurnTokenBudget`
-- [X] Hard stop when token budget is exhausted — no silent truncation, explicit warning shown to user
-- [X] Auto-compression applies only to old logs inside the JSON payload, never affects TUI display
-- [X] `/think <N> | off` — controls reasoning budget tokens (Anthropic); shown as `think:Nt` in status bar
-- [X] Dynamic thinking menu: adapts to model type (`effort_levels` / `budget` / `toggle`)
+- [X] ~~`/goal <text>` — sets the active session goal (thread-scoped), displayed persistently in TUI status bar~~
+- [X] ~~Mission Mode: when `/goal` is active (especially in `--exec`), goal is injected into the system prompt~~
+- [X] ~~Completed goal auto-written to project `MEMORY.md` after `--exec` finishes~~
+- [X] ~~Iterative compaction — "accumulative summary" algorithm: `Previous Summary + New Messages = Updated Summary` instead of full re-summarization~~
+- [X] ~~Structured summary sections: Goals, Progress (done/files/failures), Next Steps, preserved tail~~
+- [X] ~~`/compact settings` — dialog to configure a dedicated provider/model for compaction (separate from the main agent profile)~~
+- [X] ~~Compaction provider/model saved in `runtime-preferences.json`; resets to Default without manual file editing~~
+- [X] ~~TUI history read from SQLite only — visually infinite for the user, never disappears from screen~~
+- [X] ~~LLM payload uses Sliding Window with `currentTurnTokenBudget`~~
+- [X] ~~Hard stop when token budget is exhausted — no silent truncation, explicit warning shown to user~~
+- [X] ~~Auto-compression applies only to old logs inside the JSON payload, never affects TUI display~~
+- [X] ~~`/think <N> | off` — controls reasoning budget tokens (Anthropic); shown as `think:Nt` in status bar~~
+- [X] ~~Dynamic thinking menu: adapts to model type (`effort_levels` / `budget` / `toggle`)~~
 
 **In-Turn Split-Logic**
-- [X] Split-Turn mechanism: when context overflows mid-task (between tool calls), split into Prefix (compressed to "current execution context" mini-summary) and Suffix (raw — last tool calls and their results)
-- [X] Agent continues without losing connection to what happened seconds ago
+- [X] ~~Split-Turn mechanism: when context overflows mid-task (between tool calls), split into Prefix (compressed to "current execution context" mini-summary) and Suffix (raw — last tool calls and their results)~~
+- [X] ~~Agent continues without losing connection to what happened seconds ago~~
 
 **Retrieval-first Context Packets**
-- [X] Typed context packet: query, files considered, snippets, symbols/fallback lines, token estimate, truncation policy, provenance
-- [X] Hard packet size cap per mode (`plan` / `agent` / `exec`); fails loudly when no useful context can be selected
-- [X] Retrieval orchestrator: compose repo-map symbols + `search.rg` matches + fuzzy file hits into ranked packets
-- [X] Priority: AST summaries for supported languages → structured partial parsers → universal text fallback
-- [X] Raw large tool output excluded from model history; stored in debug/session logs, compressed packet injected instead
-- [X] Debug surface shows file/snippet selection reasoning without leaking into normal transcript
+- [X] ~~Typed context packet: query, files considered, snippets, symbols/fallback lines, token estimate, truncation policy, provenance~~
+- [X] ~~Hard packet size cap per mode (`plan` / `agent` / `exec`); fails loudly when no useful context can be selected~~
+- [X] ~~Retrieval orchestrator: compose repo-map symbols + `search.rg` matches + fuzzy file hits into ranked packets~~
+- [X] ~~Priority: AST summaries for supported languages → structured partial parsers → universal text fallback~~
+- [X] ~~Raw large tool output excluded from model history; stored in debug/session logs, compressed packet injected instead~~
+- [X] ~~Debug surface shows file/snippet selection reasoning without leaking into normal transcript~~
 
 **Request Usage Meter**
-- [X] `RequestUsage` payload per completed model step: `provider`, `model`, `input`, `output`, `reasoning`, `cacheRead`, `cacheWrite`, `total`, `contextPercent`, `costUsd`, `source: actual|estimated`
-- [X] OpenAI-compatible and Anthropic response normalization (including reasoning and cache fields)
-- [X] Local tokenizer fallback for other providers, result marked `estimated`
-- [X] TUI status: last request `in/out/reasoning/cache`, `% context`, `$`, provider/model
-- [X] Usage panel: session totals, average per request, cost by model/provider, most expensive request
-- [X] CLI usage/stats report command
-- [X] Same-task comparison across models: tokens, reasoning/cache, cost, latency, compression applied
+- [X] ~~`RequestUsage` payload per completed model step: `provider`, `model`, `input`, `output`, `reasoning`, `cacheRead`, `cacheWrite`, `total`, `contextPercent`, `costUsd`, `source: actual|estimated`~~
+- [X] ~~OpenAI-compatible and Anthropic response normalization (including reasoning and cache fields)~~
+- [X] ~~Local tokenizer fallback for other providers, result marked `estimated`~~
+- [X] ~~TUI status: last request `in/out/reasoning/cache`, `% context`, `$`, provider/model~~
+- [X] ~~Usage panel: session totals, average per request, cost by model/provider, most expensive request~~
+- [X] ~~CLI usage/stats report command~~
+- [X] ~~Same-task comparison across models: tokens, reasoning/cache, cost, latency, compression applied~~
 
 **Built-in Code Review (`/review`)**
-- [X] `/review` — reviews staged+unstaged changes (`git diff HEAD`); `/review staged` — staged only; `/review <file>` — specific file
-- [X] Reviewer receives: git diff, repo-map of affected files, optional `AGENTS.md` project rules
-- [X] Structured output in TUI: **Security**, **Logic**, **Style**, **Tests** sections with file:line references
-- [X] Review request goes to a dedicated review profile, does not touch main agent conversation history
-- [X] `/review settings` — configure provider/model for reviews (same dialog pattern as `/compact settings`), saved in `runtime-preferences.json`
+- [X] ~~`/review` — reviews staged+unstaged changes (`git diff HEAD`); `/review staged` — staged only; `/review <file>` — specific file~~
+- [X] ~~Reviewer receives: git diff, repo-map of affected files, optional `AGENTS.md` project rules~~
+- [X] ~~Structured output in TUI: **Security**, **Logic**, **Style**, **Tests** sections with file:line references~~
+- [X] ~~Review request goes to a dedicated review profile, does not touch main agent conversation history~~
+- [X] ~~`/review settings` — configure provider/model for reviews (same dialog pattern as `/compact settings`), saved in `runtime-preferences.json`~~
 
 ---
 
@@ -443,22 +443,22 @@
 - [ ] CLI: `umbra mcp add`, `umbra mcp list`, `umbra mcp enable/disable`, `umbra mcp remove`
 
 **Skills System & Multi-agent Context**
-- [X] Recursive search for instruction files from current directory up to disk root
-- [X] Supported formats: `UMBRA.md` (priority), `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `GEMINI.md`, `QWEN.md`, `SYSTEM.md`
-- [X] Context merging: parent-directory rules merged with local; local rules take priority on conflict
-- [X] Global scope: `~/.umbra/UMBRA.md` and `~/.umbra/AGENTS.md` mixed into all projects
-- [X] `SKILL.md` parser with YAML frontmatter (`name`, `description`, `disable-model-invocation`, `argument-hint`)
-- [X] Skills resolved from global (`~/.umbra/skills/`) and project-local (`.umbra/skills/`) directories
-- [X] Dynamic context injection via shell commands in skills (`` !`git status` `` syntax)
-- [X] Skills passed to LLM via XML injection in system prompt
+- [X] ~~Recursive search for instruction files from current directory up to disk root~~
+- [X] ~~Supported formats: `UMBRA.md` (priority), `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `GEMINI.md`, `QWEN.md`, `SYSTEM.md`~~
+- [X] ~~Context merging: parent-directory rules merged with local; local rules take priority on conflict~~
+- [X] ~~Global scope: `~/.umbra/UMBRA.md` and `~/.umbra/AGENTS.md` mixed into all projects~~
+- [X] ~~`SKILL.md` parser with YAML frontmatter (`name`, `description`, `disable-model-invocation`, `argument-hint`)~~
+- [X] ~~Skills resolved from global (`~/.umbra/skills/`) and project-local (`.umbra/skills/`) directories~~
+- [X] ~~Dynamic context injection via shell commands in skills (`` !`git status` `` syntax)~~
+- [X] ~~Skills passed to LLM via XML injection in system prompt~~
 
 **Custom Slash Commands & TUI Integration**
-- [X] Dynamic slash command registration from loaded `SKILL.md` files
-- [X] Autocomplete for custom commands in TUI input
-- [X] Argument mapping: `$ARGUMENTS`, `$0`, `$1`
-- [X] Visual execution indicator and results shown in transcript
-- [X] `/skill-create` — interactive TUI wizard: name → description → creates `.umbra/skills/<name>/SKILL.md`
-- [X] Validation: lowercase-kebab-case, duplicate check (no silent overwrite); ESC cancels without creating a file
+- [X] ~~Dynamic slash command registration from loaded `SKILL.md` files~~
+- [X] ~~Autocomplete for custom commands in TUI input~~
+- [X] ~~Argument mapping: `$ARGUMENTS`, `$0`, `$1`~~
+- [X] ~~Visual execution indicator and results shown in transcript~~
+- [X] ~~`/skill-create` — interactive TUI wizard: name → description → creates `.umbra/skills/<name>/SKILL.md`~~
+- [X] ~~Validation: lowercase-kebab-case, duplicate check (no silent overwrite); ESC cancels without creating a file~~
 
 **Security & Guardrails**
 - [ ] Permission confirmation before MCP server or Skill executes a potentially dangerous operation
@@ -471,7 +471,7 @@
 
 > The user clearly understands what the selected model can do right now — the interface never "promises" features the model doesn't support.
 
-- [X] HuggingFace API and models.dev integration for capability enrichment (tool/vision/context/reasoning flags)
+- [X] ~~HuggingFace API and models.dev integration for capability enrichment (tool/vision/context/reasoning flags)~~
 - [ ] Extended reasoning metadata: detailed object with type (`effort_levels` / `budget` / `toggle`) and available options (e.g. `["low", "medium", "high"]`) — used by TUI to render the correct `/think` interface
 - [ ] Capability info line under the TUI input field: active model name + detected capabilities in yellow parentheses, e.g. `Claude 3.7 Sonnet (tools, vision, thinking: 8k)` or `o3-mini (tools, reasoning: high)`
 - [ ] Context fill indicator (circular or progress bar): physical model max, configured soft limit, current token usage
