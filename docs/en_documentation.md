@@ -76,8 +76,6 @@ npm install -g umbra-agent
 pnpm add -g umbra-agent
 ```
 
-> Install scripts (`install.sh` / `install.ps1`) are coming soon — they will handle Node.js, pnpm, and native dependencies automatically.
-
 > Python package — coming soon.
 
 ---

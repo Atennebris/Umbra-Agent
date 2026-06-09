@@ -65,11 +65,11 @@ The autonomous loop is there too — Umbra can run tasks end-to-end without baby
 
 ## Key features
 
-- **Autonomous Harness Loop** — runs your check script, reads failures, sends them to the model, iterates until it passes. No babysitting.
 - **Token-aware context engine** — repo map, retrieval packets, split-turn compression, session compaction. Stays within budget automatically.
-- **Provider-agnostic** — OpenAI, Anthropic, Mistral, Ollama, LM Studio, OpenCode Zen (free), and any OpenAI-compatible endpoint.
-- **Persistent memory** — one SQLite database across all projects. Past solutions indexed and recalled via vector search.
 - **40+ language parsers** — AST-based project outline for JavaScript, TypeScript, Python, Go, Rust, and many more.
+- **Persistent memory** — one SQLite database across all projects. Past solutions indexed and recalled via vector search.
+- **Provider-agnostic** — OpenAI, Anthropic, Mistral, Ollama, LM Studio, OpenCode Zen (free), and any OpenAI-compatible endpoint.
+- **Autonomous Harness Loop** — runs your check script, reads failures, sends them to the model, iterates until it passes. No babysitting.
 - **Local-first** — your code stays on your machine. Nothing sent to third parties beyond the provider you choose.
 
 ---

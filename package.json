@@ -1,7 +1,7 @@
 {
   "name": "umbra-agent",
   "version": "0.1.0",
-  "description": "Local AI agent orchestration gateway with a daemon-first CLI.",
+  "description": "AI coding agent built around token efficiency — keeps the model effective across large codebases and long sessions without burning through your budget.",
   "type": "module",
   "bin": {
     "umbra": "./bin/umbra.js"
