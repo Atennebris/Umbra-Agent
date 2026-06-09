@@ -3681,7 +3681,9 @@ function ProviderDialogView({ state }: { state: ProviderDialogState }) {
     return (
       <Box marginTop={1} flexDirection="column">
         <Text color={umbraTheme.accent}>Memory</Text>
-        <Text color={umbraTheme.muted}>{'↑↓ navigate  1-3 shortcut  Enter confirm  Esc cancel'}</Text>
+        <Text color={umbraTheme.muted}>
+          {'↑↓ navigate  1-3 shortcut  Enter confirm  Esc cancel'}
+        </Text>
         {options.map((opt, index) => (
           <Box key={String(opt.value)} flexDirection="column">
             <Text color={index === state.selectedIndex ? umbraTheme.accent : umbraTheme.text}>
