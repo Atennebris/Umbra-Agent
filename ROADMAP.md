@@ -719,3 +719,21 @@
 - [ ] Agent infers preferred verbosity from feedback history and auto-adjusts prompt
 - [ ] Adaptive vocabulary: high technical level detected → basic concept explanations omitted
 
+---
+
+## Phase 31: Long-Run Reliability & Checkpointing
+
+> True autonomous operation (hours, days) requires protection against failures: reboots, network drops, daemon crashes. An interrupted run should never be lost.
+
+- [ ] Every N tool calls (default 5) or on time-box trigger: serialize `conversationHistory`, `currentGoal`, `progressSummary`, `pendingToolCall` to SQLite `run_checkpoints`
+- [ ] Checkpoint format: `{runId, stepNumber, conversationSnapshot, goalState, activeSkills, timestamp}`; history compressed to `progressSummary + tail` before serialization
+- [ ] On daemon start: check `run_checkpoints` for interrupted runs older than 30 seconds
+- [ ] TUI prompt on discovery: "Unfinished task found: `<goal>`. Resume?"
+- [ ] `umbra resume <runId>` — direct CLI resume without TUI; restores history and retries last incomplete tool call
+- [ ] % completion estimate from skill metrics and `progressSummary`; ETA shown in TUI status bar (`~12 min remaining`)
+- [ ] In `--exec` mode: live progress written to `~/.umbra/runs/<runId>/progress.json` for external monitoring
+- [ ] Autonomous action audit log: `~/.umbra/audit/<YYYY-MM-DD>.jsonl` — `{timestamp, runId, action, tool, args_hash, result_summary, user_present: false}`; args hashed, env var values masked
+- [ ] `umbra audit show [--date] [--runId]` — review what the agent did while you were away
+- [ ] Auto-pause if `failureRate > maxFailureRate` within one run — notification instead of infinite retry loop
+- [ ] `umbra run status <runId>` — real-time status of a long-running task
+
