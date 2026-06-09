@@ -1,6 +1,6 @@
 {
   "name": "umbra-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI coding agent focused on saving tokens and autonomous task execution. Works with any LLM provider, including local models.",
   "type": "module",
   "bin": {
@@ -38,6 +38,10 @@
     "code-generation",
     "terminal"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Atennebris/Umbra-Agent.git"
+  },
   "author": "Atennebris",
   "license": "MIT",
   "dependencies": {

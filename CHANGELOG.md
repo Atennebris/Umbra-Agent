@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-06-10
+
+### Fixed
+
+- README images now use absolute URLs for correct display on npmjs.com
+
 ## [0.1.0] - 2026-06-07
 
 ### Core Architecture
