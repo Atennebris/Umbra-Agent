@@ -498,3 +498,27 @@
 - [ ] `ProviderHook` — teach Umbra to work with entirely new AI models
 - [ ] `AuthHook` — implement custom OAuth flows
 
+---
+
+## Phase 20: Security Boundaries & Environment Hygiene (.env, .gitignore)
+
+> The agent respects the project's ignore rules and never leaks sensitive data into the chat context.
+
+- [ ] `isPathIgnored` utility using `git check-ignore` — integrated into all read/search tools and repo-map generator
+- [ ] Default sensitive file blocklist: `.env`, `.git/config`, `~/.ssh/*`, `~/.bash_history`
+- [ ] Smart Skip: sensitive file content replaced with `[SENSITIVE_CONTENT_HIDDEN]` instead of being read
+- [ ] Auto-detection and masking of API keys and tokens in `shell.exec` output (Redaction Layer)
+- [ ] Dangerous bash pattern detection to block obfuscation and injection attempts
+
+---
+
+## Phase 21: Large File Support (Leviathan Engine)
+
+> Make Umbra the most efficient agent for working with files of 10,000+ lines using laser-precise tools for radical token savings.
+
+- [ ] `fs.read` upgrade: `startLine` / `endLine` parameters — agent reads only the needed fragment, saving up to 95% of context budget
+- [ ] AST Folding / Skeleton View: first contact with a giant file returns only the skeleton (classes and method signatures without bodies)
+- [ ] `fs.expand` tool: agent selectively expands specific function bodies on demand
+- [ ] `fs.search_internal` tool: semantic search within a single file — finds logic by meaning across 10,000+ lines
+- [ ] `fs.patch_targeted` tool: replace specific line ranges (`range: [start, end]`) — faster and more reliable than Unified Diff for massive files
+
