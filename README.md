@@ -29,7 +29,7 @@
 
 ---
 
-An AI coding agent that stretches your token budget — not your patience. Built for large codebases and long sessions, without burning through your plan.
+AI coding agent focused on saving tokens and getting the job done. Works with any LLM provider — including local models.
 
 ---
 
