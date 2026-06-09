@@ -684,3 +684,23 @@
 - [ ] Per-run `uncertainty_budget` (default 3 allowed `NEEDS_VERIFICATION` actions): on budget exceeded, run switches to `plan` mode and asks the user instead of continuing blindly
 - [ ] `umbra config set uncertainty_budget <n>` — `0` for paranoid mode, higher values for maximum autonomy
 
+---
+
+## Phase 29: Edge Intelligence (Local-First Inference)
+
+> Not every task needs the cloud. Classification, tool selection, and simple transformations can run on a free local quantized model with zero latency — amplifying Umbra's existing token savings.
+
+> All features behind `UMBRA_LOCAL_INFERENCE=1`. Without a local runtime installed, graceful degradation — all requests go to the cloud as before.
+
+- [ ] `ProviderType: 'local_llama'` in registry: Ollama (`http://localhost:11434`) as zero-config first option
+- [ ] Optional llama.cpp subprocess integration for users without Ollama
+- [ ] Dynamic local model discovery via Ollama `GET /api/tags`
+- [ ] Local models in registry with `cloud: false`, `free: true`, `contextWindow`, `capabilities`
+- [ ] Three hybrid inference presets in `routing-policy.json`: `economy` (max local), `balanced` (local for simple tasks, cloud for complex), `quality` (always cloud)
+- [ ] `umbra config set inference_profile <economy|balanced|quality>`
+- [ ] Local task classification: tiny local model (e.g. Phi-3.5-mini via Ollama) replaces cloud calls for `complexity`/`domain` routing decisions
+- [ ] Local embeddings: Ollama `nomic-embed-text` for vectors exceeding 512 tokens
+- [ ] `UMBRA_OFFLINE=1` — all requests routed to local models only; graceful error if local unavailable
+- [ ] TUI status bar shows `[local: model-name]` for local requests
+- [ ] `umbra usage` — separate line: `local inference: N requests, $0.00`
+
