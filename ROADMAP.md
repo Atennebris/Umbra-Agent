@@ -704,3 +704,18 @@
 - [ ] TUI status bar shows `[local: model-name]` for local requests
 - [ ] `umbra usage` — separate line: `local inference: N requests, $0.00`
 
+---
+
+## Phase 30: Active Preference Learning & Personalization
+
+> Umbra learns not just what works in general, but what this specific user likes. Silent, non-intrusive preference collection — the agent improves simply from daily use.
+
+- [ ] `Ctrl+U` (thumbs up) / `Ctrl+D` (thumbs down) hotkeys after any agent response
+- [ ] Feedback saved to `~/.umbra/preferences.jsonl`: `{sessionId, messageId, rating: +1|-1, model, provider, task_domain, timestamp}`; non-blocking, TUI stays in place
+- [ ] `~/.umbra/user-profile.json`: preferred response style, favorite languages, preferred tools, timezone, verbosity level
+- [ ] `umbra profile setup` — interactive questionnaire on first launch; `umbra profile edit` at any time
+- [ ] User profile injected into system prompt via `{{userProfile}}` variable
+- [ ] Weekly analysis of `preferences.jsonl`: if `thumbs_down_rate > 0.3` for a `task_domain + model` combination → alert in notification log on next TUI start: "Quality degradation detected in domain X with model Y. Want to reroute?"
+- [ ] Agent infers preferred verbosity from feedback history and auto-adjusts prompt
+- [ ] Adaptive vocabulary: high technical level detected → basic concept explanations omitted
+
