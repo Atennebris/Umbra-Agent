@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-06-10
+
+### Fixed
+
+- Removed `src/` from package files — fixes `spawn tsx ENOENT` error on global install
+
 ## [0.1.2] - 2026-06-10
 
 ### Fixed
