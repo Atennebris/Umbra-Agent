@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-06-10
+
+### Fixed
+
+- `ecosystem.config.cjs` and `config.json` added to package files — fixes PM2 daemon startup after global install
+
 ## [0.1.3] - 2026-06-10
 
 ### Fixed
