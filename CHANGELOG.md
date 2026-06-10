@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-06-10
+
+### Fixed
+
+- `scripts/` directory added to package files — fixes postinstall error on global install
+
 ## [0.1.1] - 2026-06-10
 
 ### Fixed
