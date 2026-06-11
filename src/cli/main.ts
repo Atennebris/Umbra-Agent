@@ -1,6 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { cac } from 'cac';
 import { writeDebugEvent } from '../debug/runtime-debug.js';
+import { getCurrentVersion } from '../utils/update-check.js';
 import { loadCliCommand } from './command-loader.js';
 
 type StatusOptions = {
@@ -367,7 +368,7 @@ export function createCli() {
     });
 
   cli.help();
-  cli.version('0.1.0');
+  cli.version(getCurrentVersion());
 
   return cli;
 }

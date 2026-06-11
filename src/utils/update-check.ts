@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const _require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function getCurrentVersion(): string {
+export function getCurrentVersion(): string {
   try {
     const pkg = _require(path.resolve(__dirname, '../../package.json')) as { version: string };
     return pkg.version;
