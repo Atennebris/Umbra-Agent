@@ -88,10 +88,16 @@ The autonomous loop is there too — Umbra can run tasks end-to-end without baby
 curl -fsSL https://umbra.expert/install.sh | sh
 ```
 
+> [!CAUTION]
+> Temporarily not working — use the npm / pnpm install method below instead.
+
 **PowerShell (iwr):**
 ```powershell
 iwr https://umbra.expert/install.ps1 | iex
 ```
+
+> [!CAUTION]
+> Temporarily not working — use the npm / pnpm install method below instead.
 
 **npm / pnpm:**
 ```bash

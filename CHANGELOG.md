@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-06-11
+
+### Fixed
+
+- `umbra --version` now reads the version from `package.json` instead of a hardcoded string that was stuck on `0.1.0`
+
 ## [0.1.4] - 2026-06-10
 
 ### Fixed
