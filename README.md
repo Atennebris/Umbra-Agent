@@ -2,6 +2,10 @@
 
 <div align="center">
 
+<a href="https://www.npmjs.com/package/umbra-agent">
+  <img src="https://img.shields.io/npm/v/umbra-agent?style=for-the-badge&color=7c5cbf&label=npm&labelColor=2b2b2b" alt="npm version" />
+</a>
+&nbsp;
 <a href="https://umbra.expert">
   <img src="https://img.shields.io/badge/-umbra.expert-7c5cbf?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiBmb250LXdlaWdodD0iYm9sZCI+VTwvdGV4dD48L3N2Zz4=" alt="Website" />
 </a>
@@ -88,16 +92,10 @@ The autonomous loop is there too — Umbra can run tasks end-to-end without baby
 curl -fsSL https://umbra.expert/install.sh | sh
 ```
 
-> [!CAUTION]
-> Temporarily not working — use the npm / pnpm install method below instead.
-
 **PowerShell (iwr):**
 ```powershell
 iwr https://umbra.expert/install.ps1 | iex
 ```
-
-> [!CAUTION]
-> Temporarily not working — use the npm / pnpm install method below instead.
 
 **npm / pnpm:**
 ```bash
