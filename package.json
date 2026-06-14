@@ -1,6 +1,6 @@
 {
   "name": "umbra-agent",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "AI coding agent focused on saving tokens and autonomous task execution. Works with any LLM provider, including local models.",
   "type": "module",
   "bin": {

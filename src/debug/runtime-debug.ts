@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { resolveRuntimeLayout } from '../memory/runtime-layout.js';
@@ -34,6 +35,25 @@ export function writeDebugEvent(event: Omit<DebugEvent, 'timestamp'>): void {
   } catch {
     // Debug logging must never break the CLI or daemon path.
   }
+}
+
+// Windows only — on other platforms run `umbra debug` in another terminal.
+export function spawnDebugConsole(): void {
+  if (process.platform !== 'win32') {
+    return;
+  }
+
+  const scriptPath = process.argv[1];
+  if (!scriptPath) {
+    return;
+  }
+
+  const isTsEntry = scriptPath.endsWith('.ts') || scriptPath.endsWith('.tsx');
+  const args = isTsEntry
+    ? ['/c', 'start', 'Umbra Debug', 'npx', 'tsx', scriptPath, 'debug']
+    : ['/c', 'start', 'Umbra Debug', process.execPath, scriptPath, 'debug'];
+
+  spawn('cmd.exe', args, { detached: true, stdio: 'ignore', windowsHide: false }).unref();
 }
 
 export async function runDebugMonitor(options: { intervalMs?: number } = {}): Promise<void> {

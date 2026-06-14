@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { Box, Text, useApp, useInput } from 'ink';
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +31,7 @@ import {
 } from '../../core/runtime-preferences.js';
 import { writeDebugEvent } from '../../debug/runtime-debug.js';
 import { createSkill, invokeSkill, loadSkills, runSkillScript } from '../../skills/skill-loader.js';
+import { highlightCode } from '../../utils/syntax-highlight.js';
 import {
   approveRunPermission,
   archiveThread,
@@ -166,6 +168,7 @@ type SessionEntry =
       result: string;
       seqFirst?: boolean;
       seqLast?: boolean;
+      preview?: { code: string; lang: string };
     }
   | { id: string; kind: 'banner'; flags?: string[] }
   | { id: string; kind: 'mode-badge'; mode: 'exec' | 'debug' };
@@ -6921,6 +6924,7 @@ function SessionEntryView({ entry }: { entry: SessionEntry }) {
             <Text color={barColor}>{'╰'}</Text>
           </Box>
         ) : null}
+        {entry.preview ? <ToolCallCodePreview preview={entry.preview} /> : null}
       </Box>
     );
   }
@@ -7016,6 +7020,33 @@ function SessionEntryView({ entry }: { entry: SessionEntry }) {
       <Text color={eventColor(entry.tone)} dimColor={entry.tone === 'info'}>
         {`${logGlyph} ${stripEventPrefix(entry.text)}`}
       </Text>
+    </Box>
+  );
+}
+
+const TOOL_PREVIEW_MAX_LINES = 40;
+
+function ToolCallCodePreview({ preview }: { preview: { code: string; lang: string } }) {
+  const hl = highlightCode(preview.code, preview.lang);
+  const visible = hl.lines.slice(0, TOOL_PREVIEW_MAX_LINES);
+  const hiddenCount = hl.lines.length - visible.length;
+
+  return (
+    <Box flexDirection="column" paddingLeft={2}>
+      {visible.map((lineTokens, lineIdx) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: stable line order in preview
+        <Text key={`pv:${lineIdx}`}>
+          {lineTokens.map((tok, tokIdx) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable token order within line
+            <Text key={tokIdx} color={tok.color}>
+              {tok.text}
+            </Text>
+          ))}
+        </Text>
+      ))}
+      {hiddenCount > 0 ? (
+        <Text color={umbraTheme.muted} dimColor>{`… +${hiddenCount} more lines`}</Text>
+      ) : null}
     </Box>
   );
 }
@@ -8404,6 +8435,7 @@ export function buildRunTimelineEntries(run: RunTaskPayload): SessionEntry[] {
       const toolName = String(event.payload.name ?? 'unknown');
       const action = describeToolAction(toolName, event.payload.arguments);
       const target = describeToolTarget(toolName, event.payload.arguments);
+      const preview = buildToolCallPreview(toolName, event.payload.arguments);
       entries.push({
         id: event.id,
         kind: 'tool-call',
@@ -8412,6 +8444,7 @@ export function buildRunTimelineEntries(run: RunTaskPayload): SessionEntry[] {
         status: 'running',
         target,
         result: '',
+        ...(preview ? { preview } : {}),
       });
       continue;
     }
@@ -8615,6 +8648,27 @@ function describeToolTarget(name: string, argumentsValue: unknown): string {
   }
 
   return '';
+}
+
+function buildToolCallPreview(
+  toolName: string,
+  argumentsValue: unknown,
+): { code: string; lang: string } | undefined {
+  const args = isRecord(argumentsValue) ? argumentsValue : {};
+
+  if (
+    toolName === 'fs.write' &&
+    typeof args.content === 'string' &&
+    typeof args.path === 'string'
+  ) {
+    return { code: args.content, lang: path.extname(args.path).slice(1) };
+  }
+
+  if (toolName === 'fs.edit' && typeof args.patch === 'string') {
+    return { code: args.patch, lang: 'diff' };
+  }
+
+  return undefined;
 }
 
 function summarizeToolResult(payload: Record<string, unknown>): string {

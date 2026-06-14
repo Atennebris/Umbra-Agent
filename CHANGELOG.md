@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-06-14
+
+### Added
+
+- TUI tool-call cards for `fs.write`/`fs.edit` now show a syntax-highlighted code preview (new file content) or unified diff (patch) right below the summary, with a 40-line cap
+
 ## [0.1.5] - 2026-06-11
 
 ### Fixed

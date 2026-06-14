@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { cac } from 'cac';
-import { writeDebugEvent } from '../debug/runtime-debug.js';
+import { spawnDebugConsole, writeDebugEvent } from '../debug/runtime-debug.js';
 import { getCurrentVersion } from '../utils/update-check.js';
 import { loadCliCommand } from './command-loader.js';
 
@@ -323,7 +323,7 @@ export function createCli() {
   cli
     .command('', 'Open the Umbra terminal workspace.')
     .option('--exec', 'Autonomous mode — agent works without confirmation prompts.')
-    .option('--debug', 'Open the debug monitor instead of the TUI.')
+    .option('--debug', 'Open a separate debug console window alongside the TUI.')
     .option('--doctor', 'Run environment diagnostics and exit.')
     .option('--update', 'Check for updates and install if available, then exit.')
     .option('--prompt <text>', 'Send a single prompt and exit.')
@@ -348,9 +348,7 @@ export function createCli() {
         return;
       }
       if (options.debug) {
-        const handler = await loadCliCommand('debug');
-        await handler({ intervalMs: undefined });
-        return;
+        spawnDebugConsole();
       }
       if (options.exec) {
         const handler = await loadCliCommand('exec');
