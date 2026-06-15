@@ -2,6 +2,15 @@
 // Returns HighlightToken[][] (per-line spans) for Ink <Text color> rendering.
 // No ANSI strings emitted — callers receive hex color codes.
 
+import {
+  type BundledLanguage,
+  type BundledTheme,
+  type ThemeRegistration,
+  bundledLanguages,
+  createHighlighter,
+} from 'shiki';
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
+
 export type TokenType =
   | 'keyword'
   | 'string'
@@ -44,9 +53,7 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   rb: 'ruby',
   rs: 'rust',
   js: 'javascript',
-  jsx: 'javascript',
   ts: 'typescript',
-  tsx: 'typescript',
   yml: 'yaml',
   md: 'markdown',
   docker: 'dockerfile',
@@ -55,6 +62,10 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'c++': 'cpp',
   ps1: 'powershell',
   psm1: 'powershell',
+  gql: 'graphql',
+  make: 'makefile',
+  pl: 'perl',
+  htm: 'html',
 };
 
 // -- Token colors (Umbra theme hex values) -------------------------------------
@@ -103,738 +114,196 @@ function colorFor(type: TokenType): string {
   }
 }
 
-// -- Keyword sets per language -------------------------------------------------
+// -- Shiki theme: maps TextMate scopes onto the Umbra COLOR palette ------------
 
-const KEYWORDS: Record<string, string[]> = {
-  javascript: [
-    'const',
-    'let',
-    'var',
-    'function',
-    'return',
-    'if',
-    'else',
-    'class',
-    'import',
-    'export',
-    'default',
-    'async',
-    'await',
-    'for',
-    'while',
-    'do',
-    'break',
-    'continue',
-    'typeof',
-    'instanceof',
-    'new',
-    'delete',
-    'this',
-    'super',
-    'null',
-    'undefined',
-    'true',
-    'false',
-    'try',
-    'catch',
-    'finally',
-    'throw',
-    'switch',
-    'case',
-    'of',
-    'in',
-    'from',
-    'extends',
-    'static',
-    'yield',
-    'void',
-    'with',
-    'debugger',
-  ],
-  typescript: [
-    'const',
-    'let',
-    'var',
-    'function',
-    'return',
-    'if',
-    'else',
-    'class',
-    'import',
-    'export',
-    'default',
-    'async',
-    'await',
-    'for',
-    'while',
-    'do',
-    'break',
-    'continue',
-    'typeof',
-    'instanceof',
-    'new',
-    'delete',
-    'this',
-    'super',
-    'null',
-    'undefined',
-    'true',
-    'false',
-    'try',
-    'catch',
-    'finally',
-    'throw',
-    'switch',
-    'case',
-    'of',
-    'in',
-    'from',
-    'extends',
-    'static',
-    'yield',
-    'void',
-    'with',
-    'debugger',
-    'type',
-    'interface',
-    'enum',
-    'readonly',
-    'abstract',
-    'implements',
-    'namespace',
-    'declare',
-    'as',
-    'keyof',
-    'never',
-    'unknown',
-    'any',
-    'string',
-    'number',
-    'boolean',
-    'object',
-    'symbol',
-    'public',
-    'private',
-    'protected',
-    'override',
-    'satisfies',
-  ],
-  python: [
-    'def',
-    'class',
-    'return',
-    'if',
-    'elif',
-    'else',
-    'for',
-    'while',
-    'import',
-    'from',
-    'as',
-    'with',
-    'try',
-    'except',
-    'finally',
-    'lambda',
-    'None',
-    'True',
-    'False',
-    'and',
-    'or',
-    'not',
-    'in',
-    'is',
-    'pass',
-    'break',
-    'continue',
-    'raise',
-    'yield',
-    'global',
-    'nonlocal',
-    'del',
-    'assert',
-    'async',
-    'await',
-    'match',
-    'case',
-  ],
-  bash: [
-    'if',
-    'then',
-    'else',
-    'fi',
-    'for',
-    'do',
-    'done',
-    'while',
-    'case',
-    'esac',
-    'function',
-    'echo',
-    'export',
-    'local',
-    'source',
-    'return',
-    'exit',
-    'in',
-    'select',
-    'until',
-    'read',
-    'declare',
-    'unset',
-    'shift',
-    'break',
-    'continue',
-  ],
-  go: [
-    'func',
-    'type',
-    'struct',
-    'interface',
-    'var',
-    'const',
-    'if',
-    'else',
-    'for',
-    'range',
-    'return',
-    'import',
-    'package',
-    'defer',
-    'go',
-    'chan',
-    'map',
-    'nil',
-    'true',
-    'false',
-    'switch',
-    'case',
-    'default',
-    'break',
-    'continue',
-    'fallthrough',
-    'goto',
-    'select',
-    'make',
-    'new',
-    'append',
-    'len',
-    'cap',
-    'delete',
-    'close',
-    'copy',
-    'recover',
-    'panic',
-  ],
-  rust: [
-    'fn',
-    'struct',
-    'impl',
-    'trait',
-    'enum',
-    'let',
-    'mut',
-    'use',
-    'pub',
-    'mod',
-    'if',
-    'else',
-    'for',
-    'while',
-    'match',
-    'return',
-    'async',
-    'await',
-    'move',
-    'where',
-    'type',
-    'const',
-    'static',
-    'ref',
-    'in',
-    'loop',
-    'break',
-    'continue',
-    'crate',
-    'super',
-    'self',
-    'Self',
-    'true',
-    'false',
-    'as',
-    'dyn',
-    'extern',
-    'unsafe',
-    'box',
-  ],
-  java: [
-    'class',
-    'interface',
-    'extends',
-    'implements',
-    'public',
-    'private',
-    'protected',
-    'static',
-    'final',
-    'void',
-    'return',
-    'if',
-    'else',
-    'for',
-    'while',
-    'do',
-    'import',
-    'package',
-    'new',
-    'this',
-    'super',
-    'try',
-    'catch',
-    'finally',
-    'throw',
-    'throws',
-    'abstract',
-    'synchronized',
-    'instanceof',
-    'null',
-    'true',
-    'false',
-    'boolean',
-    'int',
-    'long',
-    'double',
-    'float',
-    'char',
-    'byte',
-    'short',
-    'switch',
-    'case',
-    'break',
-    'continue',
-    'enum',
-    'default',
-    'record',
-    'sealed',
-    'permits',
-  ],
-  'c#': [
-    'class',
-    'interface',
-    'struct',
-    'enum',
-    'namespace',
-    'using',
-    'public',
-    'private',
-    'protected',
-    'internal',
-    'static',
-    'readonly',
-    'const',
-    'void',
-    'return',
-    'if',
-    'else',
-    'for',
-    'foreach',
-    'while',
-    'do',
-    'new',
-    'this',
-    'base',
-    'try',
-    'catch',
-    'finally',
-    'throw',
-    'abstract',
-    'virtual',
-    'override',
-    'sealed',
-    'null',
-    'true',
-    'false',
-    'var',
-    'async',
-    'await',
-    'get',
-    'set',
-    'value',
-    'typeof',
-    'is',
-    'as',
-    'bool',
-    'int',
-    'long',
-    'double',
-    'float',
-    'string',
-    'object',
-    'dynamic',
-    'switch',
-    'case',
-    'break',
-    'continue',
-    'default',
-    'delegate',
-    'event',
-    'in',
-    'out',
-    'ref',
-    'params',
-    'where',
-    'record',
-    'init',
-  ],
-  cpp: [
-    'class',
-    'struct',
-    'enum',
-    'namespace',
-    'template',
-    'typename',
-    'public',
-    'private',
-    'protected',
-    'virtual',
-    'override',
-    'final',
-    'const',
-    'static',
-    'void',
-    'return',
-    'if',
-    'else',
-    'for',
-    'while',
-    'do',
-    'new',
-    'delete',
-    'this',
-    'try',
-    'catch',
-    'throw',
-    'nullptr',
-    'true',
-    'false',
-    'auto',
-    'using',
-    'inline',
-    'explicit',
-    'mutable',
-    'volatile',
-    'operator',
-    'switch',
-    'case',
-    'break',
-    'continue',
-    'default',
-    'sizeof',
-    'alignof',
-    'decltype',
-    'constexpr',
-    'noexcept',
-    'friend',
-    'typedef',
-    'int',
-    'long',
-    'char',
-    'bool',
-    'double',
-    'float',
-    'unsigned',
-    'short',
-  ],
-  sql: [
-    'SELECT',
-    'FROM',
-    'WHERE',
-    'INSERT',
-    'INTO',
-    'VALUES',
-    'UPDATE',
-    'SET',
-    'DELETE',
-    'CREATE',
-    'TABLE',
-    'INDEX',
-    'VIEW',
-    'DROP',
-    'ALTER',
-    'ADD',
-    'COLUMN',
-    'JOIN',
-    'LEFT',
-    'RIGHT',
-    'INNER',
-    'OUTER',
-    'FULL',
-    'CROSS',
-    'ON',
-    'AND',
-    'OR',
-    'NOT',
-    'IN',
-    'IS',
-    'NULL',
-    'AS',
-    'ORDER',
-    'BY',
-    'GROUP',
-    'HAVING',
-    'LIMIT',
-    'OFFSET',
-    'DISTINCT',
-    'COUNT',
-    'SUM',
-    'AVG',
-    'MAX',
-    'MIN',
-    'PRIMARY',
-    'KEY',
-    'FOREIGN',
-    'REFERENCES',
-    'DEFAULT',
-    'CONSTRAINT',
-    'TRUNCATE',
-    'BEGIN',
-    'COMMIT',
-    'ROLLBACK',
-    'TRANSACTION',
-    'PROCEDURE',
-    'FUNCTION',
-    'TRIGGER',
-    'CASCADE',
-    'UNIQUE',
-    'CHECK',
-    'UNION',
-    'ALL',
-    'EXCEPT',
-    'INTERSECT',
-    'CASE',
-    'WHEN',
-    'THEN',
-    'ELSE',
-    'END',
-    'LIKE',
-    'BETWEEN',
-    'EXISTS',
-    'COALESCE',
-    'NULLIF',
+const UMBRA_SHIKI_THEME: ThemeRegistration = {
+  name: 'umbra',
+  type: 'dark',
+  colors: {
+    'editor.background': '#0d0b14',
+    'editor.foreground': COLOR.plain!,
+  },
+  tokenColors: [
+    { settings: { foreground: COLOR.plain! } },
+    {
+      scope: ['comment', 'punctuation.definition.comment'],
+      settings: { foreground: COLOR.comment! },
+    },
+    {
+      scope: ['string', 'string.quoted', 'string.template', 'punctuation.definition.string'],
+      settings: { foreground: COLOR.string! },
+    },
+    { scope: ['constant.numeric'], settings: { foreground: COLOR.number! } },
+    {
+      scope: [
+        'keyword',
+        'keyword.control',
+        'keyword.operator.new',
+        'storage.type',
+        'storage.modifier',
+        'constant.language',
+      ],
+      settings: { foreground: COLOR.keyword! },
+    },
+    {
+      scope: ['entity.name.function', 'support.function', 'entity.name.function.member'],
+      settings: { foreground: COLOR.function! },
+    },
+    {
+      scope: [
+        'entity.name.type',
+        'entity.name.class',
+        'support.type',
+        'support.class',
+        'entity.name.tag',
+        'entity.other.attribute-name',
+      ],
+      settings: { foreground: COLOR.typeName! },
+    },
+    {
+      scope: ['keyword.operator', 'punctuation.accessor'],
+      settings: { foreground: COLOR.operator! },
+    },
+    // Markdown-specific scopes
+    {
+      scope: ['markup.heading', 'entity.name.section.markdown'],
+      settings: { foreground: COLOR.keyword! },
+    },
+    { scope: ['markup.bold'], settings: { foreground: COLOR.typeName! } },
+    { scope: ['markup.italic'], settings: { foreground: COLOR.function! } },
+    { scope: ['markup.inline.raw'], settings: { foreground: COLOR.string! } },
+    {
+      scope: ['punctuation.definition.list.begin'],
+      settings: { foreground: COLOR.operator! },
+    },
+    { scope: ['markup.quote'], settings: { foreground: COLOR.comment! } },
+    {
+      scope: ['markup.underline.link', 'string.other.link.title'],
+      settings: { foreground: COLOR.function! },
+    },
   ],
 };
 
-// -- Rule types ----------------------------------------------------------------
+// -- Reverse color → TokenType map (for callers that branch on `.type`) --------
 
-type CommentStyle = 'slash' | 'hash' | 'sql' | 'none';
+const COLOR_TO_TYPE: Record<string, TokenType> = {
+  [COLOR.keyword!]: 'keyword',
+  [COLOR.string!]: 'string',
+  [COLOR.comment!]: 'comment',
+  [COLOR.number!]: 'number',
+  [COLOR.operator!]: 'operator',
+  [COLOR.function!]: 'function',
+  [COLOR.typeName!]: 'type-name',
+};
 
-type TokenRule = { re: RegExp; type: TokenType };
-
-function makeRules(
-  langKeywords: string[],
-  commentStyle: CommentStyle,
-  caseInsensitive = false,
-): TokenRule[] {
-  const flags = caseInsensitive ? 'iy' : 'y';
-  const rules: TokenRule[] = [];
-
-  if (commentStyle === 'slash') {
-    rules.push({ re: /\/\/.*$/y, type: 'comment' });
-    rules.push({ re: /\/\*[\s\S]*?\*\//y, type: 'comment' });
-  } else if (commentStyle === 'hash') {
-    rules.push({ re: /#.*$/y, type: 'comment' });
-  } else if (commentStyle === 'sql') {
-    rules.push({ re: /--.*$/y, type: 'comment' });
-    rules.push({ re: /\/\*[\s\S]*?\*\//y, type: 'comment' });
-  }
-
-  // Strings: double-quoted, single-quoted, backtick template literals
-  rules.push({ re: /(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/y, type: 'string' });
-
-  // Numbers: hex, float, integer, scientific notation
-  rules.push({ re: /\b(?:0x[\da-fA-F]+|\d+\.?\d*(?:[eE][+-]?\d+)?)\b/y, type: 'number' });
-
-  // Keywords
-  if (langKeywords.length > 0) {
-    const pattern = `\\b(?:${langKeywords.join('|')})\\b`;
-    rules.push({ re: new RegExp(pattern, flags), type: 'keyword' });
-  }
-
-  // Function calls: identifier immediately before (
-  rules.push({ re: /\b([a-zA-Z_]\w*)\s*(?=\()/y, type: 'function' });
-
-  // Type names: PascalCase identifiers
-  rules.push({ re: /\b[A-Z][a-zA-Z0-9_]*\b/y, type: 'type-name' });
-
-  // Operators and punctuation
-  rules.push({ re: /[+\-*/<>=!&|%^~?:@,;.[\]{}()]+/y, type: 'operator' });
-
-  return rules;
+function shikiColorToType(color: string | undefined): TokenType {
+  if (!color) return 'plain';
+  return COLOR_TO_TYPE[color.toLowerCase()] ?? 'plain';
 }
 
-// -- Rule cache ----------------------------------------------------------------
+// -- Shiki highlighter singleton ------------------------------------------------
 
-const rulesCache = new Map<string, TokenRule[]>();
+// Every grammar Shiki ships, preloaded at startup so all of them get real
+// highlighting (not just a hand-picked subset) — same coverage as VS Code/Codex.
+const PRELOAD_LANGS = Object.keys(bundledLanguages);
 
-type LangFamily =
-  | 'jsts'
-  | 'python'
-  | 'bash'
-  | 'go'
-  | 'rust'
-  | 'java'
-  | 'csharp'
-  | 'cpp'
-  | 'css'
-  | 'json'
-  | 'yaml'
-  | 'sql'
-  | 'diff'
-  | 'generic';
-
-function getLangFamily(lang: string): LangFamily {
-  switch (lang) {
-    case 'javascript':
-    case 'typescript':
-      return 'jsts';
-    case 'python':
-    case 'ruby':
-      return 'python';
-    case 'bash':
-      return 'bash';
-    case 'go':
-      return 'go';
-    case 'rust':
-      return 'rust';
-    case 'java':
-    case 'kotlin':
-    case 'scala':
-      return 'java';
-    case 'c#':
-      return 'csharp';
-    case 'c':
-    case 'cpp':
-      return 'cpp';
-    case 'css':
-    case 'scss':
-    case 'sass':
-      return 'css';
-    case 'json':
-      return 'json';
-    case 'yaml':
-      return 'yaml';
-    case 'sql':
-      return 'sql';
-    case 'diff':
-    case 'patch':
-      return 'diff';
-    default:
-      return 'generic';
-  }
+function toShikiLangId(lang: string): string {
+  return lang === 'c#' ? 'csharp' : lang;
 }
 
-function buildRulesForLang(lang: string): TokenRule[] {
-  const family = getLangFamily(lang);
-  switch (family) {
-    case 'jsts':
-      return makeRules(
-        lang === 'typescript' ? KEYWORDS.typescript! : KEYWORDS.javascript!,
-        'slash',
-      );
-    case 'python':
-      return makeRules(KEYWORDS.python!, 'hash');
-    case 'bash':
-      return makeRules(KEYWORDS.bash!, 'hash');
-    case 'go':
-      return makeRules(KEYWORDS.go!, 'slash');
-    case 'rust':
-      return makeRules(KEYWORDS.rust!, 'slash');
-    case 'java':
-      return makeRules(KEYWORDS.java!, 'slash');
-    case 'csharp':
-      return makeRules(KEYWORDS['c#']!, 'slash');
-    case 'cpp':
-      return makeRules(KEYWORDS.cpp!, 'slash');
-    case 'css':
-      return makeRules([], 'slash');
-    case 'json':
-      return makeRules([], 'none');
-    case 'yaml':
-      return makeRules([], 'hash');
-    case 'sql':
-      return makeRules(KEYWORDS.sql!, 'sql', true);
-    default:
-      return [];
-  }
-}
+type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;
 
-function getRules(lang: string): TokenRule[] {
-  const cached = rulesCache.get(lang);
-  if (cached) return cached;
-  const rules = buildRulesForLang(lang);
-  rulesCache.set(lang, rules);
-  return rules;
-}
+let highlighterInstance: Highlighter | null = null;
+let initPromise: Promise<void> | null = null;
 
-// -- Single-pass line tokenizer ------------------------------------------------
-
-function tokenizeLine(line: string, rules: TokenRule[]): HighlightLine {
-  const tokens: HighlightToken[] = [];
-  let pos = 0;
-  let plainStart = -1;
-
-  function flushPlain(end: number): void {
-    if (plainStart >= 0 && plainStart < end) {
-      tokens.push({ text: line.slice(plainStart, end), color: COLOR.plain!, type: 'plain' });
-      plainStart = -1;
+/** Loads the Shiki highlighter and TextMate grammars. Safe to call multiple times. */
+export function initHighlighter(): Promise<void> {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      highlighterInstance = await createHighlighter({
+        themes: [UMBRA_SHIKI_THEME],
+        langs: PRELOAD_LANGS,
+        engine: createJavaScriptRegexEngine({ forgiving: true }),
+      });
+    } catch {
+      highlighterInstance = null;
     }
-  }
+  })();
+  return initPromise;
+}
 
-  while (pos < line.length) {
-    let matched = false;
-    for (const rule of rules) {
-      rule.re.lastIndex = pos;
-      const m = rule.re.exec(line);
-      if (m !== null) {
-        flushPlain(pos);
-        tokens.push({ text: m[0], color: colorFor(rule.type), type: rule.type });
-        pos += m[0].length;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      if (plainStart < 0) plainStart = pos;
-      pos++;
-    }
-  }
-  flushPlain(pos);
-
-  // Empty line → single empty plain token so callers always get at least one token
-  if (tokens.length === 0) {
-    tokens.push({ text: '', color: COLOR.plain!, type: 'plain' });
-  }
-  return tokens;
+export function isHighlighterReady(): boolean {
+  return highlighterInstance !== null;
 }
 
 // -- Diff tokenizer ------------------------------------------------------------
 
+// Matches `@@ -oldStart,oldLines +newStart,newLines @@` (the line-count parts
+// are optional, matching git's output for single-line hunks).
+const HUNK_HEADER_RE = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
+const GUTTER_NUM_WIDTH = 4;
+
+// Renders the left-hand line-number gutter: old-file number, new-file number,
+// each blank when the line doesn't exist on that side (added/removed lines)
+// or before the first @@ header has been seen.
+function diffGutter(oldLineNum: number | null, newLineNum: number | null): string {
+  const oldText = oldLineNum === null ? ' '.repeat(GUTTER_NUM_WIDTH) : String(oldLineNum).padStart(GUTTER_NUM_WIDTH);
+  const newText = newLineNum === null ? ' '.repeat(GUTTER_NUM_WIDTH) : String(newLineNum).padStart(GUTTER_NUM_WIDTH);
+  return `${oldText} ${newText} │ `;
+}
+
+// Renders a unified diff with a Codex-style line-number gutter instead of raw
+// `@@ -a,b +c,d @@` hunk headers — those headers are dropped entirely and their
+// old/new line numbers feed the gutter for every following line instead.
 function tokenizeDiff(code: string): HighlightLine[] {
-  return code.split('\n').map((line): HighlightLine => {
-    if (line.startsWith('+++') || line.startsWith('---')) {
-      return [{ text: line, color: colorFor('diff-header'), type: 'diff-header' }];
+  const lines: HighlightLine[] = [];
+  let oldLineNum: number | null = null;
+  let newLineNum: number | null = null;
+
+  for (const line of code.split('\n')) {
+    if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('\\')) {
+      lines.push([
+        { text: diffGutter(null, null), color: colorFor('diff-meta'), type: 'diff-meta' },
+        { text: line, color: colorFor('diff-header'), type: 'diff-header' },
+      ]);
+      continue;
     }
+
+    const hunkMatch = line.match(HUNK_HEADER_RE);
+    if (hunkMatch) {
+      oldLineNum = Number(hunkMatch[1]);
+      newLineNum = Number(hunkMatch[2]);
+      continue;
+    }
+
     if (line.startsWith('+')) {
-      return [{ text: line, color: colorFor('diff-add'), type: 'diff-add' }];
+      lines.push([
+        { text: diffGutter(null, newLineNum), color: colorFor('diff-meta'), type: 'diff-meta' },
+        { text: line, color: colorFor('diff-add'), type: 'diff-add' },
+      ]);
+      if (newLineNum !== null) newLineNum += 1;
+      continue;
     }
+
     if (line.startsWith('-')) {
-      return [{ text: line, color: colorFor('diff-del'), type: 'diff-del' }];
+      lines.push([
+        { text: diffGutter(oldLineNum, null), color: colorFor('diff-meta'), type: 'diff-meta' },
+        { text: line, color: colorFor('diff-del'), type: 'diff-del' },
+      ]);
+      if (oldLineNum !== null) oldLineNum += 1;
+      continue;
     }
-    if (line.startsWith('@@')) {
-      return [{ text: line, color: colorFor('diff-meta'), type: 'diff-meta' }];
-    }
-    return [{ text: line, color: COLOR.plain!, type: 'plain' }];
-  });
+
+    lines.push([
+      { text: diffGutter(oldLineNum, newLineNum), color: colorFor('diff-meta'), type: 'diff-meta' },
+      { text: line, color: COLOR.plain!, type: 'plain' },
+    ]);
+    if (oldLineNum !== null) oldLineNum += 1;
+    if (newLineNum !== null) newLineNum += 1;
+  }
+
+  return lines;
 }
 
 // -- Plain text helper ---------------------------------------------------------
@@ -860,7 +329,8 @@ export function exceedsGuardrails(code: string): boolean {
 /**
  * Highlight `code` for a given fence language tag.
  * - Resolves language aliases (shell→bash, csharp→c#, etc.)
- * - Returns `fallback: true` when the language is unsupported or input is oversized.
+ * - Returns `fallback: true` when the language is unsupported, the highlighter
+ *   isn't ready yet, or the input is oversized.
  * - Returns structural `HighlightLine[]` (no ANSI codes) — callers use `.color` directly.
  */
 export function highlightCode(code: string, rawLang: string): HighlightResult {
@@ -870,17 +340,32 @@ export function highlightCode(code: string, rawLang: string): HighlightResult {
     return makePlainResult(code, lang);
   }
 
-  const family = getLangFamily(lang);
-
-  if (family === 'diff') {
+  if (lang === 'diff' || lang === 'patch') {
     return { lines: tokenizeDiff(code), language: lang, fallback: false };
   }
 
-  if (family === 'generic') {
+  const shikiLang = toShikiLangId(lang);
+  const highlighter = highlighterInstance;
+  if (highlighter === null || !PRELOAD_LANGS.includes(shikiLang)) {
     return makePlainResult(code, lang);
   }
 
-  const rules = getRules(lang);
-  const lines = code.split('\n').map((line) => tokenizeLine(line, rules));
-  return { lines, language: lang, fallback: false };
+  try {
+    const tokenLines = highlighter.codeToTokensBase(code, {
+      lang: shikiLang as BundledLanguage,
+      theme: 'umbra' as BundledTheme,
+    });
+    const lines: HighlightLine[] = tokenLines.map((lineTokens) =>
+      lineTokens.length === 0
+        ? [{ text: '', color: COLOR.plain!, type: 'plain' as const }]
+        : lineTokens.map((tok) => ({
+            text: tok.content,
+            color: (tok.color ?? COLOR.plain!).toLowerCase(),
+            type: shikiColorToType(tok.color),
+          })),
+    );
+    return { lines, language: lang, fallback: false };
+  } catch {
+    return makePlainResult(code, lang);
+  }
 }

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createLineMatcher } from '../src/tools/builtins.js';
 import { executeToolCall } from '../src/tools/index.js';
 
 const createdDirs: string[] = [];
@@ -330,5 +331,31 @@ describe('search.fuzzy ranking', () => {
     const out = result.output as { results: Array<{ path: string }> };
     expect(out.results.every((r) => !r.path.includes('node_modules'))).toBe(true);
     expect(out.results.some((r) => r.path.includes('real-target'))).toBe(true);
+  });
+});
+
+// ─── search.rg fallback engine: regex pattern matching ───────────────────────
+
+describe('createLineMatcher', () => {
+  it('matches regex patterns, not just literal substrings', () => {
+    const matcher = createLineMatcher('this\\.score\\[this\\.winner\\]\\+\\+', false);
+
+    expect(matcher('this.score[this.winner]++;')).toBeGreaterThanOrEqual(0);
+    expect(matcher('this.scoreXthis.winnerYYY;')).toBe(-1);
+  });
+
+  it('falls back to a literal substring match for invalid regex patterns', () => {
+    const matcher = createLineMatcher('score[', false);
+
+    expect(matcher('player.score[0] += 1;')).toBeGreaterThanOrEqual(0);
+    expect(matcher('no match here')).toBe(-1);
+  });
+
+  it('respects case sensitivity', () => {
+    const sensitive = createLineMatcher('Score', true);
+    const insensitive = createLineMatcher('Score', false);
+
+    expect(sensitive('const score = 0;')).toBe(-1);
+    expect(insensitive('const score = 0;')).toBeGreaterThanOrEqual(0);
   });
 });

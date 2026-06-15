@@ -6,7 +6,6 @@ import { promisify } from 'node:util';
 import { z } from 'zod';
 import { resolveExternalToolPath } from './external-tools.js';
 import type { ToolExecutionContext } from './types.js';
-import { applyUnifiedDiffPatch } from './unified-diff.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -121,6 +120,7 @@ export const fsReadOutputSchema = z.object({
   content: z.string(),
   truncated: z.boolean(),
   totalBytes: z.number().int(),
+  totalLines: z.number().int(),
 });
 
 export async function executeFsRead(
@@ -129,14 +129,16 @@ export async function executeFsRead(
 ): Promise<z.infer<typeof fsReadOutputSchema>> {
   const resolvedPath = path.resolve(context.cwd, input.path);
   const buffer = await fs.readFile(resolvedPath);
-  const sliced = buffer.subarray(input.offset, input.offset + input.limit);
+  const lines = buffer.toString('utf8').split('\n');
+  const sliced = lines.slice(input.offset, input.offset + input.limit);
 
   return {
     path: input.path,
     resolvedPath,
-    content: sliced.toString('utf8'),
-    truncated: input.offset + input.limit < buffer.length,
+    content: sliced.join('\n'),
+    truncated: input.offset + input.limit < lines.length,
     totalBytes: buffer.length,
+    totalLines: lines.length,
   };
 }
 
@@ -174,30 +176,63 @@ export async function executeFsWrite(
 }
 
 export const fsEditInputSchema = z.object({
-  patch: z.string().min(1),
-  dryRun: z.boolean().default(false),
+  path: z.string().min(1),
+  oldString: z.string().min(1),
+  newString: z.string(),
+  replaceAll: z.boolean().default(false),
 });
 
 export const fsEditOutputSchema = z.object({
-  dryRun: z.boolean(),
-  changedFiles: z.array(
-    z.object({
-      path: z.string(),
-      operation: z.enum(['modified', 'added', 'deleted']),
-      hunksApplied: z.number().int(),
-    }),
-  ),
+  path: z.string(),
+  resolvedPath: z.string(),
+  replacements: z.number().int(),
 });
 
 export async function executeFsEdit(
   input: z.infer<typeof fsEditInputSchema>,
   context: ToolExecutionContext,
 ): Promise<z.infer<typeof fsEditOutputSchema>> {
-  const changedFiles = await applyUnifiedDiffPatch(input.patch, context.cwd, input.dryRun);
+  const resolvedPath = path.resolve(context.cwd, input.path);
+  const content = await fs.readFile(resolvedPath, 'utf8');
+  const occurrences = countOccurrences(content, input.oldString);
+
+  if (occurrences === 0) {
+    throw new Error(
+      `oldString not found in ${input.path}. It must match the file's current content exactly, including whitespace and indentation — re-read the file if it may have changed.`,
+    );
+  }
+
+  if (!input.replaceAll && occurrences > 1) {
+    throw new Error(
+      `oldString matches ${occurrences} locations in ${input.path}. Add more surrounding context to make it unique, or pass replaceAll: true to replace every occurrence.`,
+    );
+  }
+
+  const updatedContent = input.replaceAll
+    ? content.split(input.oldString).join(input.newString)
+    : content.replace(input.oldString, input.newString);
+
+  await fs.writeFile(resolvedPath, updatedContent, 'utf8');
+
   return {
-    dryRun: input.dryRun,
-    changedFiles,
+    path: input.path,
+    resolvedPath,
+    replacements: input.replaceAll ? occurrences : 1,
   };
+}
+
+function countOccurrences(haystack: string, needle: string): number {
+  let count = 0;
+  let fromIndex = 0;
+
+  for (;;) {
+    const foundIndex = haystack.indexOf(needle, fromIndex);
+    if (foundIndex === -1) {
+      return count;
+    }
+    count += 1;
+    fromIndex = foundIndex + needle.length;
+  }
 }
 
 export const shellExecInputSchema = z.object({
@@ -362,14 +397,8 @@ export async function executeSearchRg(
   }
 
   const matches: z.infer<typeof searchRgOutputSchema>['matches'] = [];
-  await searchFallback(
-    resolvedPath,
-    input.pattern,
-    input.caseSensitive,
-    input.maxMatches,
-    matches,
-    input.glob,
-  );
+  const matcher = createLineMatcher(input.pattern, input.caseSensitive);
+  await searchFallback(resolvedPath, matcher, input.maxMatches, matches, input.glob);
 
   const fileBuckets = buildFallbackBuckets(matches, maxSnippetsPerFile, maxFiles);
   const truncatedFiles = fileBuckets.length >= maxFiles;
@@ -543,10 +572,32 @@ function buildFallbackBuckets(
   return Array.from(fileMap.values());
 }
 
+export type LineMatcher = (line: string) => number;
+
+// search.rg's `pattern` is documented and used as a regex (mirroring ripgrep),
+// so the fallback engine (used when the rg binary isn't available) must treat
+// it as one too — a literal substring match against a regex-escaped pattern
+// like `this\.score\[this\.winner\]\+\+` would never match the real source
+// line `this.score[this.winner]++`, silently returning zero matches.
+export function createLineMatcher(pattern: string, caseSensitive: boolean): LineMatcher {
+  try {
+    const regex = new RegExp(pattern, caseSensitive ? '' : 'i');
+    return (line) => {
+      const match = regex.exec(line);
+      return match ? match.index : -1;
+    };
+  } catch {
+    const needle = caseSensitive ? pattern : pattern.toLowerCase();
+    return (line) => {
+      const haystack = caseSensitive ? line : line.toLowerCase();
+      return haystack.indexOf(needle);
+    };
+  }
+}
+
 async function searchFallback(
   directoryPath: string,
-  pattern: string,
-  caseSensitive: boolean,
+  matcher: LineMatcher,
   maxMatches: number,
   matches: z.infer<typeof searchRgOutputSchema>['matches'],
   glob?: string,
@@ -564,12 +615,10 @@ async function searchFallback(
     if (content === null) return;
 
     const lines = content.split(/\r?\n/);
-    const needle = caseSensitive ? pattern : pattern.toLowerCase();
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
       const line = lines[lineIndex] ?? '';
-      const haystack = caseSensitive ? line : line.toLowerCase();
-      const column = haystack.indexOf(needle);
+      const column = matcher(line);
 
       if (column !== -1) {
         matches.push({
@@ -594,7 +643,7 @@ async function searchFallback(
     const absolutePath = path.join(directoryPath, entry.name);
 
     if (entry.isDirectory()) {
-      await searchFallback(absolutePath, pattern, caseSensitive, maxMatches, matches, glob, cwd);
+      await searchFallback(absolutePath, matcher, maxMatches, matches, glob, cwd);
       continue;
     }
 
@@ -604,12 +653,10 @@ async function searchFallback(
     if (content === null) continue;
 
     const lines = content.split(/\r?\n/);
-    const needle = caseSensitive ? pattern : pattern.toLowerCase();
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
       const line = lines[lineIndex] ?? '';
-      const haystack = caseSensitive ? line : line.toLowerCase();
-      const column = haystack.indexOf(needle);
+      const column = matcher(line);
 
       if (column !== -1) {
         matches.push({

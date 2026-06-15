@@ -1,6 +1,6 @@
 {
   "name": "umbra-agent",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "AI coding agent focused on saving tokens and autonomous task execution. Works with any LLM provider, including local models.",
   "type": "module",
   "bin": {
@@ -60,6 +60,7 @@
     "marked": "^18.0.3",
     "pdf-parse": "^2.4.5",
     "react": "^19.2.5",
+    "shiki": "^4.2.0",
     "sqlite-vec": "^0.1.9",
     "strip-ansi": "^7.2.0",
     "terminal-link": "^5.0.0",

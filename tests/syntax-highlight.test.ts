@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   type HighlightResult,
   exceedsGuardrails,
   highlightCode,
+  initHighlighter,
   resolveLanguage,
 } from '../src/utils/syntax-highlight.js';
 
@@ -11,6 +12,12 @@ import {
 function reconstruct(result: HighlightResult): string {
   return result.lines.map((line) => line.map((tok) => tok.text).join('')).join('\n');
 }
+
+// Load the Shiki highlighter once for the whole suite — without this,
+// highlightCode() falls back to plain text for every language.
+beforeAll(async () => {
+  await initHighlighter();
+});
 
 // ---------------------------------------------------------------------------
 // Language alias resolution (Codex highlight.rs parity)
@@ -26,9 +33,15 @@ describe('resolveLanguage', () => {
   it('resolves python3 → python (Codex alias)', () =>
     expect(resolveLanguage('python3')).toBe('python'));
   it('resolves ts → typescript', () => expect(resolveLanguage('ts')).toBe('typescript'));
-  it('resolves tsx → typescript', () => expect(resolveLanguage('tsx')).toBe('typescript'));
   it('resolves js → javascript', () => expect(resolveLanguage('js')).toBe('javascript'));
-  it('resolves jsx → javascript', () => expect(resolveLanguage('jsx')).toBe('javascript'));
+  it('keeps tsx as its own grammar (not collapsed into typescript)', () =>
+    expect(resolveLanguage('tsx')).toBe('tsx'));
+  it('keeps jsx as its own grammar (not collapsed into javascript)', () =>
+    expect(resolveLanguage('jsx')).toBe('jsx'));
+  it('resolves gql → graphql', () => expect(resolveLanguage('gql')).toBe('graphql'));
+  it('resolves make → makefile', () => expect(resolveLanguage('make')).toBe('makefile'));
+  it('resolves pl → perl', () => expect(resolveLanguage('pl')).toBe('perl'));
+  it('resolves htm → html', () => expect(resolveLanguage('htm')).toBe('html'));
   it('resolves yml → yaml', () => expect(resolveLanguage('yml')).toBe('yaml'));
   it('resolves py → python', () => expect(resolveLanguage('py')).toBe('python'));
   it('resolves rs → rust', () => expect(resolveLanguage('rs')).toBe('rust'));
@@ -87,7 +100,6 @@ describe('content round-trip', () => {
     { lang: 'rust', code: 'fn main() {\n    println!("hi");\n}' },
     { lang: 'java', code: 'public class A {\n  public static void main(String[] args) {}\n}' },
     { lang: 'sql', code: 'SELECT * FROM users WHERE id = 1;' },
-    { lang: 'diff', code: '--- a/foo.ts\n+++ b/foo.ts\n@@ -1 +1 @@\n-old\n+new\n ctx' },
     { lang: 'unknownlang', code: 'some arbitrary text 123' },
   ];
 
@@ -108,6 +120,55 @@ describe('content round-trip', () => {
     const result = highlightCode(code, 'typescript');
     expect(reconstruct(result)).toBe(code);
   });
+});
+
+// ---------------------------------------------------------------------------
+// Shiki migration: new languages get real TextMate grammars instead of
+// falling back to plain text (fallback: false + content round-trip).
+// ---------------------------------------------------------------------------
+
+describe('shiki language coverage', () => {
+  const cases: Array<{ lang: string; code: string }> = [
+    { lang: 'jsx', code: 'const App = () => <div className="x">Hi</div>;' },
+    { lang: 'tsx', code: 'const App = (): JSX.Element => <div className="x">Hi</div>;' },
+    { lang: 'kotlin', code: 'fun main() {\n    println("hi")\n}' },
+    { lang: 'scala', code: 'object Main {\n  def main(args: Array[String]): Unit = {}\n}' },
+    { lang: 'csharp', code: 'class A {\n    void F() {}\n}' },
+    { lang: 'c', code: 'int main() {\n    return 0;\n}' },
+    { lang: 'cpp', code: 'int main() {\n    return 0;\n}' },
+    { lang: 'css', code: '.box {\n  color: red;\n}' },
+    { lang: 'scss', code: '.box {\n  $size: 10px;\n  width: $size;\n}' },
+    { lang: 'sass', code: '.box\n  color: red' },
+    { lang: 'json', code: '{"a": 1, "b": [2, 3]}' },
+    { lang: 'yaml', code: 'key: value\nlist:\n  - a\n  - b' },
+    { lang: 'html', code: '<div class="box">Hello</div>' },
+    { lang: 'markdown', code: '# Title\n\nSome **bold** text.' },
+    { lang: 'php', code: '<?php\necho "hi";\n?>' },
+    { lang: 'xml', code: '<root><item id="1"/></root>' },
+    { lang: 'vue', code: '<template>\n  <div>{{ msg }}</div>\n</template>' },
+    { lang: 'svelte', code: '<script>\n  let x = 1;\n</script>\n<p>{x}</p>' },
+    { lang: 'dockerfile', code: 'FROM node:20\nRUN npm install' },
+    { lang: 'powershell', code: '$x = 1\nWrite-Host $x' },
+    { lang: 'toml', code: '[server]\nport = 8080' },
+    { lang: 'ini', code: '[section]\nkey=value' },
+    { lang: 'graphql', code: 'query { user { id name } }' },
+    { lang: 'dart', code: "void main() {\n  print('hi');\n}" },
+    { lang: 'swift', code: 'func greet() {\n    print("hi")\n}' },
+    { lang: 'lua', code: 'local x = 1\nprint(x)' },
+    { lang: 'makefile', code: 'build:\n\techo done' },
+    { lang: 'perl', code: 'my $x = 1;\nprint $x;' },
+    { lang: 'r', code: 'x <- 1\nprint(x)' },
+  ];
+
+  for (const { lang, code } of cases) {
+    it(`${lang}: fallback is false`, () => {
+      expect(highlightCode(code, lang).fallback).toBe(false);
+    });
+
+    it(`${lang}: preserves content (round-trip)`, () => {
+      expect(reconstruct(highlightCode(code, lang))).toBe(code);
+    });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -164,36 +225,64 @@ describe('fallback flag', () => {
 describe('diff rendering', () => {
   it('colors added lines as diff-add', () => {
     const result = highlightCode('+added line', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('diff-add');
+    expect(result.lines[0]?.[1]?.type).toBe('diff-add');
   });
   it('colors removed lines as diff-del', () => {
     const result = highlightCode('-removed line', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('diff-del');
-  });
-  it('colors @@ hunk headers as diff-meta', () => {
-    const result = highlightCode('@@ -1,3 +1,4 @@', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('diff-meta');
+    expect(result.lines[0]?.[1]?.type).toBe('diff-del');
   });
   it('colors --- file headers as diff-header', () => {
     const result = highlightCode('--- a/file.ts', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('diff-header');
+    expect(result.lines[0]?.[1]?.type).toBe('diff-header');
   });
   it('colors +++ file headers as diff-header', () => {
     const result = highlightCode('+++ b/file.ts', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('diff-header');
+    expect(result.lines[0]?.[1]?.type).toBe('diff-header');
   });
   it('colors context lines as plain', () => {
     const result = highlightCode(' unchanged context', 'diff');
-    expect(result.lines[0]?.[0]?.type).toBe('plain');
+    expect(result.lines[0]?.[1]?.type).toBe('plain');
   });
-  it('diff round-trip: full hunk preserves content', () => {
-    const code = '--- a/foo.ts\n+++ b/foo.ts\n@@ -1,2 +1,2 @@\n-old line\n+new line\n context';
-    expect(reconstruct(highlightCode(code, 'diff'))).toBe(code);
+  it('drops @@ hunk headers and adds a line-number gutter', () => {
+    const code =
+      '--- a/foo.ts\n+++ b/foo.ts\n@@ -10,3 +10,4 @@\n context\n-old line\n+new line\n context2';
+    const result = highlightCode(code, 'diff');
+
+    const fullText = result.lines.map((line) => line.map((tok) => tok.text).join('')).join('\n');
+    expect(fullText).not.toContain('@@');
+
+    // 7 input lines minus the dropped @@ header line.
+    expect(result.lines).toHaveLength(6);
+
+    expect(result.lines[0]?.[1]?.text).toBe('--- a/foo.ts');
+    expect(result.lines[1]?.[1]?.text).toBe('+++ b/foo.ts');
+
+    // Context line right after the @@ header takes its old/new start numbers.
+    expect(result.lines[2]?.[0]?.text).toContain('10');
+    expect(result.lines[2]?.[1]?.text).toBe(' context');
+
+    // Removed line keeps the old-file number, blank on the new side.
+    expect(result.lines[3]?.[0]?.text).toContain('11');
+    expect(result.lines[3]?.[1]?.type).toBe('diff-del');
+
+    // Added line keeps the new-file number, blank on the old side.
+    expect(result.lines[4]?.[0]?.text).toContain('11');
+    expect(result.lines[4]?.[1]?.type).toBe('diff-add');
+
+    // Trailing context line advances both counters by one.
+    expect(result.lines[5]?.[0]?.text).toContain('12');
+    expect(result.lines[5]?.[1]?.text).toBe(' context2');
   });
   it('patch alias resolves to diff behavior', () => {
     const result = highlightCode('+added', 'patch');
     expect(result.fallback).toBe(false);
-    expect(result.lines[0]?.[0]?.type).toBe('diff-add');
+    expect(result.lines[0]?.[1]?.type).toBe('diff-add');
+  });
+  it('content tokens (excluding the gutter) preserve all non-@@ lines', () => {
+    const code = '--- a/foo.ts\n+++ b/foo.ts\n@@ -1 +1 @@\n-old\n+new\n ctx';
+    const result = highlightCode(code, 'diff');
+    const contentLines = result.lines.map((line) => line[1]?.text ?? '');
+    expect(contentLines).toEqual(['--- a/foo.ts', '+++ b/foo.ts', '-old', '+new', ' ctx']);
   });
 });
 

@@ -125,17 +125,15 @@ function serializeChat(messages: ProviderCompleteRequest['messages']): unknown[]
       return {
         role: 'assistant',
         content: m.content ?? null,
-        // DeepSeek requires reasoning_content to be echoed back in subsequent turns
-        ...(m.reasoningContent ? { reasoning_content: m.reasoningContent } : {}),
+        // Reasoning content is intentionally NOT echoed back — big-pickle/DeepSeek-class
+        // models don't require it for tool-call continuity, and echoing it caused
+        // multi-KB reasoning blocks to accumulate in every subsequent request.
         tool_calls: m.toolCalls.map((tc) => ({
           id: tc.id,
           type: 'function',
           function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
         })),
       };
-    }
-    if (m.role === 'assistant' && m.reasoningContent) {
-      return { role: 'assistant', content: m.content ?? '', reasoning_content: m.reasoningContent };
     }
     return { role: m.role, content: m.content ?? '' };
   });

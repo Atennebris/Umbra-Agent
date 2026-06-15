@@ -755,3 +755,28 @@ let _currentThemeName = 'umbra';
 export function setCurrentThemeName(name: string): void {
   _currentThemeName = name;
 }
+
+// Blends `fgHex` into `bgHex` by `amount` (0-1) — used to derive subtle,
+// theme-aware line-background tints (e.g. diff add/remove highlight bands)
+// from existing foreground/background theme colors.
+export function mixHexColor(fgHex: string, bgHex: string, amount: number): string {
+  const fg = parseHexColor(fgHex);
+  const bg = parseHexColor(bgHex);
+  if (!fg || !bg) return bgHex;
+
+  const mix = (a: number, b: number) => Math.round(b + (a - b) * amount);
+  const channel = (value: number) => value.toString(16).padStart(2, '0');
+  return `#${channel(mix(fg.r, bg.r))}${channel(mix(fg.g, bg.g))}${channel(mix(fg.b, bg.b))}`;
+}
+
+function parseHexColor(hex: string): { r: number; g: number; b: number } | null {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return null;
+
+  const value = match[1]!;
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+}

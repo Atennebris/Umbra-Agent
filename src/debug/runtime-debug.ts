@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { resolveRuntimeLayout } from '../memory/runtime-layout.js';
 import { loadConfig } from '../utils/config.js';
@@ -230,4 +231,39 @@ function renderDebugValue(value: unknown, spacedArray = false): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+// Collapses newlines and caps length so multi-line blobs (reasoning content,
+// patches, file bodies) stay on one line in latest.log and don't blow up
+// events.jsonl.
+export function truncateForDebug(text: string, maxLength = 800): string {
+  const singleLine = text.replace(/\r\n|\r|\n/g, '\\n');
+
+  if (singleLine.length <= maxLength) {
+    return singleLine;
+  }
+
+  return `${singleLine.slice(0, maxLength)}…(+${singleLine.length - maxLength} more chars)`;
+}
+
+// Writes the full, untruncated reasoning text for one LLM response to
+// debug/reasoning/<requestId>.txt so it can be inspected even when it's far
+// too large for the inline `reasoningPreview` in events.jsonl/latest.log.
+// Returns the file path, or null if the content is short enough that the
+// inline preview already covers it in full, or on write failure.
+export function writeReasoningDump(requestId: string, reasoningContent: string): string | null {
+  if (reasoningContent.length <= 800) {
+    return null;
+  }
+
+  try {
+    const layout = resolveRuntimeLayout();
+    const dir = path.join(layout.debugDir, 'reasoning');
+    fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, `${requestId}.txt`);
+    fs.writeFileSync(filePath, reasoningContent, 'utf8');
+    return filePath;
+  } catch {
+    return null;
+  }
 }

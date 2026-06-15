@@ -80,6 +80,26 @@ describe('AgentRuntime', () => {
     expect(events.some((event) => event.type === 'tool_result')).toBe(true);
   });
 
+  it('stops after the MAX_AGENT_TURNS safety cap when the model never stops requesting tools', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-agent-infinite-'));
+    createdDirs.push(workspace);
+    await fs.writeFile(path.join(workspace, 'note.txt'), 'agent content', 'utf8');
+    const provider = new ScenarioProviderCatalog('agent-infinite-tools');
+    const { runtime } = await createRuntime(provider);
+    const events: RunEvent[] = [];
+    const result = await runtime.executeRun(
+      {
+        prompt: 'Read note.txt forever',
+        mode: 'agent',
+        projectPath: workspace,
+      },
+      createHooks(events),
+    );
+
+    expect(result.finalText).toContain('turn safety limit');
+    expect(provider.requests).toHaveLength(40);
+  }, 30000);
+
   it('reuses prior session messages for follow-up agent runs', async () => {
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-agent-memory-'));
     createdDirs.push(workspace);
@@ -121,6 +141,109 @@ describe('AgentRuntime', () => {
     expect(secondResult.memoryCitation?.threadId).toBe('session-memory');
   });
 
+  it('reconstructs prior tool calls and results for follow-up agent runs', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-agent-followup-'));
+    createdDirs.push(workspace);
+    await fs.writeFile(path.join(workspace, 'note.txt'), 'agent content', 'utf8');
+    const provider = new ScenarioProviderCatalog('agent-followup-tools');
+    const { runtime } = await createRuntime(provider);
+
+    await runtime.executeRun(
+      {
+        prompt: 'Read note.txt and summarize it',
+        mode: 'agent',
+        projectPath: workspace,
+        sessionId: 'session-followup',
+      },
+      createHooks([]),
+    );
+
+    await runtime.executeRun(
+      {
+        prompt: 'What did you read?',
+        mode: 'agent',
+        projectPath: workspace,
+        sessionId: 'session-followup',
+      },
+      createHooks([]),
+    );
+
+    const thirdRequest = provider.requests.at(-1);
+
+    expect(thirdRequest).toBeDefined();
+    expect(thirdRequest?.messages.map((message) => message.role)).toEqual([
+      'system',
+      'user',
+      'assistant',
+      'assistant',
+      'tool',
+      'assistant',
+      'user',
+    ]);
+
+    const reconstructedToolCall = thirdRequest?.messages[3];
+    expect(reconstructedToolCall?.toolCalls?.[0]).toMatchObject({
+      name: 'fs.read',
+      arguments: { path: 'note.txt' },
+    });
+
+    const reconstructedToolResult = thirdRequest?.messages[4];
+    expect(reconstructedToolResult?.toolCallId).toBe(reconstructedToolCall?.toolCalls?.[0]?.id);
+    expect(reconstructedToolResult?.content).toContain('agent content');
+
+    expect(thirdRequest?.messages[5]?.content).toContain('Summary: done.');
+    expect(thirdRequest?.messages[6]?.content).toBe('What did you read?');
+  });
+
+  it('replaces a superseded fs.read result with a stale placeholder in later runs', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-agent-stale-reads-'));
+    createdDirs.push(workspace);
+    await fs.writeFile(path.join(workspace, 'note.txt'), 'agent content', 'utf8');
+    const provider = new ScenarioProviderCatalog('agent-stale-reads');
+    const { runtime } = await createRuntime(provider);
+
+    await runtime.executeRun(
+      {
+        prompt: 'Read note.txt and summarize it',
+        mode: 'agent',
+        projectPath: workspace,
+        sessionId: 'session-stale-reads',
+      },
+      createHooks([]),
+    );
+
+    await runtime.executeRun(
+      {
+        prompt: 'Read note.txt again',
+        mode: 'agent',
+        projectPath: workspace,
+        sessionId: 'session-stale-reads',
+      },
+      createHooks([]),
+    );
+
+    await runtime.executeRun(
+      {
+        prompt: 'What did you read overall?',
+        mode: 'agent',
+        projectPath: workspace,
+        sessionId: 'session-stale-reads',
+      },
+      createHooks([]),
+    );
+
+    const thirdRequest = provider.requests.at(-1);
+
+    expect(thirdRequest).toBeDefined();
+    const toolResults = thirdRequest?.messages.filter((message) => message.role === 'tool') ?? [];
+    expect(toolResults).toHaveLength(2);
+
+    expect(toolResults[0]?.content).not.toContain('agent content');
+    expect(toolResults[0]?.content).toContain('stale');
+
+    expect(toolResults[1]?.content).toContain('agent content');
+  });
+
   it('runs the exec harness loop until check.ps1 passes', async () => {
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-exec-runtime-'));
     createdDirs.push(workspace);
@@ -151,6 +274,37 @@ describe('AgentRuntime', () => {
     expect(await fs.readFile(path.join(workspace, 'state.txt'), 'utf8')).toContain('pass');
     expect(events.filter((event) => event.type === 'command').length).toBeGreaterThan(1);
   }, 20000);
+
+  it('reports an empty model response after a tool failure instead of ending silently', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-agent-empty-'));
+    createdDirs.push(workspace);
+    const { runtime } = await createRuntime(
+      new ScenarioProviderCatalog('agent-empty-after-failure'),
+    );
+    const events: RunEvent[] = [];
+
+    const result = await runtime.executeRun(
+      {
+        prompt: 'Fix the broken file',
+        mode: 'agent',
+        projectPath: workspace,
+      },
+      createHooks(events),
+    );
+
+    expect(result.finalText).toContain('Run ended with no further response');
+    expect(
+      events.some((event) => event.type === 'tool_result' && event.payload.status === 'failed'),
+    ).toBe(true);
+    expect(
+      events.some(
+        (event) =>
+          event.type === 'assistant_message' &&
+          typeof event.payload.text === 'string' &&
+          event.payload.text.includes('Run ended with no further response'),
+      ),
+    ).toBe(true);
+  });
 
   it('does not fail exec mode chat when the target project has no check script', async () => {
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-exec-no-check-'));
@@ -259,10 +413,30 @@ function createTestEmbedder(): TextEmbedder {
 }
 
 class ScenarioProviderCatalog implements ProviderCatalog {
-  readonly #scenario: 'plan' | 'agent' | 'exec' | 'exec-chat' | 'memory';
+  readonly #scenario:
+    | 'plan'
+    | 'agent'
+    | 'agent-empty-after-failure'
+    | 'agent-followup-tools'
+    | 'agent-infinite-tools'
+    | 'agent-stale-reads'
+    | 'exec'
+    | 'exec-chat'
+    | 'memory';
   readonly requests: ProviderCompleteRequest[] = [];
 
-  constructor(scenario: 'plan' | 'agent' | 'exec' | 'exec-chat' | 'memory') {
+  constructor(
+    scenario:
+      | 'plan'
+      | 'agent'
+      | 'agent-empty-after-failure'
+      | 'agent-followup-tools'
+      | 'agent-infinite-tools'
+      | 'agent-stale-reads'
+      | 'exec'
+      | 'exec-chat'
+      | 'memory',
+  ) {
     this.#scenario = scenario;
   }
 
@@ -417,6 +591,103 @@ class ScenarioProviderCatalog implements ProviderCatalog {
         providerType: 'openai',
         model: request.model ?? 'gpt-test',
         outputText: `Summary: ${toolPayloads.at(-1) ?? ''}`,
+        outputJson: null,
+        toolCalls: [],
+        stopReason: 'stop',
+      };
+    }
+
+    if (this.#scenario === 'agent-followup-tools') {
+      if (latestUser.includes('Read note.txt')) {
+        if (toolPayloads.length === 0) {
+          return toolCallResponse('fs.read', { path: 'note.txt' }, 'Reading note.txt');
+        }
+
+        return {
+          providerProfileId: 'profile-1',
+          providerType: 'openai',
+          model: request.model ?? 'gpt-test',
+          outputText: 'Summary: done.',
+          outputJson: null,
+          toolCalls: [],
+          stopReason: 'stop',
+        };
+      }
+
+      return {
+        providerProfileId: 'profile-1',
+        providerType: 'openai',
+        model: request.model ?? 'gpt-test',
+        outputText: 'Second answer.',
+        outputJson: null,
+        toolCalls: [],
+        stopReason: 'stop',
+      };
+    }
+
+    if (this.#scenario === 'agent-stale-reads') {
+      if (latestUser.includes('Read note.txt and summarize')) {
+        if (toolPayloads.length === 0) {
+          return toolCallResponse('fs.read', { path: 'note.txt' }, 'Reading note.txt');
+        }
+
+        return {
+          providerProfileId: 'profile-1',
+          providerType: 'openai',
+          model: request.model ?? 'gpt-test',
+          outputText: 'Summary: first read.',
+          outputJson: null,
+          toolCalls: [],
+          stopReason: 'stop',
+        };
+      }
+
+      if (latestUser.includes('Read note.txt again')) {
+        // toolPayloads already contains the run-1 fs.read result reconstructed
+        // from history, so the "no tool call yet this run" baseline is 1, not 0.
+        if (toolPayloads.length <= 1) {
+          return toolCallResponse('fs.read', { path: 'note.txt' }, 'Reading note.txt again');
+        }
+
+        return {
+          providerProfileId: 'profile-1',
+          providerType: 'openai',
+          model: request.model ?? 'gpt-test',
+          outputText: 'Summary: second read.',
+          outputJson: null,
+          toolCalls: [],
+          stopReason: 'stop',
+        };
+      }
+
+      return {
+        providerProfileId: 'profile-1',
+        providerType: 'openai',
+        model: request.model ?? 'gpt-test',
+        outputText: 'Final answer.',
+        outputJson: null,
+        toolCalls: [],
+        stopReason: 'stop',
+      };
+    }
+
+    if (this.#scenario === 'agent-infinite-tools') {
+      // Never stops requesting tools — used to exercise the MAX_AGENT_TURNS safety cap.
+      return toolCallResponse('fs.read', { path: 'note.txt' }, 'Reading note.txt');
+    }
+
+    if (this.#scenario === 'agent-empty-after-failure') {
+      if (toolPayloads.length === 0) {
+        return toolCallResponse('fs.read', { path: 'missing.txt' }, 'Reading missing.txt');
+      }
+
+      // Simulates a provider returning a completely empty completion after the
+      // failed fs.read result was fed back — no text, no tool calls.
+      return {
+        providerProfileId: 'profile-1',
+        providerType: 'openai',
+        model: request.model ?? 'gpt-test',
+        outputText: null,
         outputJson: null,
         toolCalls: [],
         stopReason: 'stop',

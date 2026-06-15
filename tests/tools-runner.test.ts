@@ -75,8 +75,31 @@ describe('tools runner', () => {
     expect(await fs.readFile(path.join(workspace, 'note.txt'), 'utf8')).toBe('allowed');
   });
 
-  it('applies unified diff patches through fs.edit', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-patch-'));
+  it('reads a file slice using line-based offset/limit', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-read-'));
+    createdDirs.push(workspace);
+    const lines = Array.from({ length: 10 }, (_, i) => `line${i + 1}`);
+    await fs.writeFile(path.join(workspace, 'multiline.txt'), `${lines.join('\n')}\n`, 'utf8');
+
+    const result = await executeToolCall({
+      preset: 'chat-readonly',
+      cwd: workspace,
+      call: {
+        name: 'fs.read',
+        arguments: { path: 'multiline.txt', offset: 2, limit: 3 },
+      },
+    });
+
+    expect(result.status).toBe('completed');
+    expect(result.output).toMatchObject({
+      content: 'line3\nline4\nline5',
+      truncated: true,
+      totalLines: 11,
+    });
+  });
+
+  it('replaces an exact string through fs.edit', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-edit-'));
     createdDirs.push(workspace);
     const filePath = path.join(workspace, 'alpha.txt');
     await fs.writeFile(filePath, 'one\ntwo\n', 'utf8');
@@ -87,24 +110,89 @@ describe('tools runner', () => {
       call: {
         name: 'fs.edit',
         arguments: {
-          patch: [
-            '--- a/alpha.txt',
-            '+++ b/alpha.txt',
-            '@@ -1,2 +1,2 @@',
-            ' one',
-            '-two',
-            '+three',
-          ].join('\n'),
+          path: 'alpha.txt',
+          oldString: 'two',
+          newString: 'three',
         },
       },
     });
 
     expect(result.status).toBe('completed');
     expect(await fs.readFile(filePath, 'utf8')).toBe('one\nthree\n');
-    expect(result.output).toMatchObject({
-      dryRun: false,
-      changedFiles: [{ operation: 'modified', hunksApplied: 1 }],
+    expect(result.output).toMatchObject({ replacements: 1 });
+  });
+
+  it('replaces every occurrence when replaceAll is set', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-edit-all-'));
+    createdDirs.push(workspace);
+    const filePath = path.join(workspace, 'beta.txt');
+    await fs.writeFile(filePath, 'foo bar foo baz foo\n', 'utf8');
+
+    const result = await executeToolCall({
+      preset: 'exec-full',
+      cwd: workspace,
+      call: {
+        name: 'fs.edit',
+        arguments: {
+          path: 'beta.txt',
+          oldString: 'foo',
+          newString: 'qux',
+          replaceAll: true,
+        },
+      },
     });
+
+    expect(result.status).toBe('completed');
+    expect(await fs.readFile(filePath, 'utf8')).toBe('qux bar qux baz qux\n');
+    expect(result.output).toMatchObject({ replacements: 3 });
+  });
+
+  it('fails when oldString matches more than once without replaceAll', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-edit-ambiguous-'));
+    createdDirs.push(workspace);
+    const filePath = path.join(workspace, 'gamma.txt');
+    await fs.writeFile(filePath, 'foo bar foo\n', 'utf8');
+
+    const result = await executeToolCall({
+      preset: 'exec-full',
+      cwd: workspace,
+      call: {
+        name: 'fs.edit',
+        arguments: {
+          path: 'gamma.txt',
+          oldString: 'foo',
+          newString: 'qux',
+        },
+      },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.error).toContain('matches 2 locations');
+    expect(await fs.readFile(filePath, 'utf8')).toBe('foo bar foo\n');
+  });
+
+  it('fails when oldString is not found in the file', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'umbra-tools-edit-missing-'));
+    createdDirs.push(workspace);
+    const filePath = path.join(workspace, 'delta.txt');
+    await fs.writeFile(filePath, 'one\ntwo\n', 'utf8');
+
+    const result = await executeToolCall({
+      preset: 'exec-full',
+      cwd: workspace,
+      call: {
+        name: 'fs.edit',
+        arguments: {
+          path: 'delta.txt',
+          oldString: 'not-there',
+          newString: 'still-not-there',
+        },
+      },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.error).toContain('not found');
+    expect(await fs.readFile(filePath, 'utf8')).toBe('one\ntwo\n');
   });
 
   it('runs readonly shell commands in chat-readonly preset', async () => {

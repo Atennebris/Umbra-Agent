@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Box, Text, useApp, useInput } from 'ink';
+import { Box, Text, useApp, useInput, usePaste } from 'ink';
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -17,14 +17,17 @@ import type {
 } from '../../core/contracts.js';
 import { buildSkillCreatePrompt } from '../../core/prompts.js';
 import {
+  type LivePreviewMode,
   type UsageDetailMode,
   getCompactSettings,
+  getLivePreviewMode,
   getReviewSettings,
   getThemePreference,
   getUsageDetailMode,
   readRuntimePreferences,
   setCompactSettings,
   setDefaultRuntimeMode,
+  setLivePreviewMode,
   setReviewSettings,
   setThemePreference,
   setUsageDetailMode,
@@ -106,6 +109,7 @@ import {
   THEME_NAMES,
   applyTheme,
   getCurrentThemeName,
+  mixHexColor,
   setCurrentThemeName,
   umbraTheme,
 } from './theme.js';
@@ -451,13 +455,21 @@ export function UmbraInkApp({
     summary: string;
   } | null>(null);
   const [escConfirmPending, setEscConfirmPending] = useState(false);
-  const [scrollOffset, setScrollOffset] = useState(0);
+  // Absolute index into `entries` marking the end of the scrolled viewport.
+  // `null` means "not scrolled — follow the live tail". Unlike a relative
+  // offset-from-end, this index does NOT move when `entries.length` changes
+  // (e.g. a new entry appended mid-run, or a whole batch appended when a run
+  // finishes), so the scrolled view stays anchored to what the user is reading.
+  const [scrollAnchorEnd, setScrollAnchorEnd] = useState<number | null>(null);
   const [showCitations, setShowCitations] = useState(false);
   const showCitationsRef = useRef(false);
   const [usageDetailMode, setUsageDetailMode_] = useState<UsageDetailMode>(() =>
     getUsageDetailMode(),
   );
   const usageDetailModeRef = useRef<UsageDetailMode>(usageDetailMode);
+  const [livePreviewMode, setLivePreviewMode_] = useState<LivePreviewMode>(() =>
+    getLivePreviewMode(),
+  );
   const lastUserEntryIdRef = useRef<string | null>(null);
   const [usageStats, setUsageStats] = useState<{
     totalTokens: number;
@@ -524,16 +536,18 @@ export function UmbraInkApp({
   // dialog + input + status bar (~20 lines) so arrow-key navigation causes no visible teleport.
   // History is still visible in the terminal scrollback above.
   const VIEWPORT_ENTRIES = 30; // idle: how many entries are kept in the live render area
-  const BUSY_CLIP = 6; // during generation: keep render area small to reduce cursor travel
-  const isScrolled = scrollOffset > 0 && !providerDialog;
-  const effectiveViewport = busy ? BUSY_CLIP : VIEWPORT_ENTRIES;
-  // When scrolled: end moves BACK by scrollOffset (no effectiveViewport floor — that was the
-  // bug that prevented scrolling when entries < viewport). At least 1 entry stays visible.
+  const BUSY_CLIP = 6; // during generation (not scrolled): keep render area small to reduce cursor travel
+  const isScrolled = scrollAnchorEnd !== null && !providerDialog;
+  // While scrolled we hide the ticking live UI (spinner/timer/LiveRunView) instead, so
+  // there's no need to clip the viewport for redraw-churn reasons — use the normal size.
+  const effectiveViewport = busy && !isScrolled ? BUSY_CLIP : VIEWPORT_ENTRIES;
+  // scrollAnchorEnd is an ABSOLUTE index, fixed regardless of entries.length changes
+  // (clamped defensively in case entries shrank, e.g. after /clear).
   const scrollVisibleEnd =
     providerDialog !== null
       ? entries.length
       : isScrolled
-        ? Math.max(1, entries.length - scrollOffset)
+        ? Math.max(1, Math.min(scrollAnchorEnd ?? entries.length, entries.length))
         : entries.length;
   const scrollVisibleStart =
     providerDialog !== null
@@ -587,13 +601,30 @@ export function UmbraInkApp({
     // PageUp / PageDown — viewport scroll, always active (even during run)
     if (key.pageUp && !providerDialog) {
       const step = Math.max(3, Math.floor((process.stdout.rows ?? 24) / 4));
-      const maxOffset = Math.max(0, entries.length - 1); // leave at least 1 entry visible
-      setScrollOffset((prev) => Math.min(prev + step, maxOffset));
+      setScrollAnchorEnd((prev) => {
+        const current = prev ?? entries.length;
+        return Math.max(1, current - step); // leave at least 1 entry visible
+      });
       return;
     }
     if (key.pageDown && !providerDialog) {
       const step = Math.max(3, Math.floor((process.stdout.rows ?? 24) / 4));
-      setScrollOffset((prev) => Math.max(0, prev - step));
+      setScrollAnchorEnd((prev) => {
+        if (prev === null) return null;
+        const next = prev + step;
+        return next >= entries.length ? null : next; // reaching the live tail resumes auto-follow
+      });
+      return;
+    }
+
+    // Ctrl+O — toggle live tool-call preview (diff/code) rendering between expanded and compact,
+    // always active (even during a run) so the user can react while output is streaming in.
+    if (key.ctrl && input === 'o' && !providerDialog) {
+      setLivePreviewMode_((prev) => {
+        const next: LivePreviewMode = prev === 'expanded' ? 'compact' : 'expanded';
+        setLivePreviewMode(next);
+        return next;
+      });
       return;
     }
 
@@ -638,7 +669,10 @@ export function UmbraInkApp({
       void handleProviderDialogInput(providerDialog, input, key, {
         setProviderDialog,
         appendEntries,
-        replaceEntries: setEntries,
+        replaceEntries: (next) => {
+          setEntries(next);
+          setScrollAnchorEnd(null); // switching threads: start at the bottom
+        },
         refreshStatus,
         setRuntimeMode: applyRuntimeMode,
         projectPath,
@@ -693,7 +727,7 @@ export function UmbraInkApp({
     if (key.escape) {
       // If scrolled and not mid-run: reset scroll on ESC before anything else
       if (isScrolled && !busy) {
-        setScrollOffset(0);
+        setScrollAnchorEnd(null);
         return;
       }
 
@@ -847,6 +881,7 @@ export function UmbraInkApp({
         // sessionId.  Old thread stays in history but leaves the active view.
         setBuffer('');
         setCursorPosition(0);
+        setScrollAnchorEnd(null);
         // ESC[2J  — erase entire screen
         // ESC[3J  — erase scrollback buffer
         // ESC[H   — move cursor to row 1, col 1
@@ -1534,7 +1569,7 @@ export function UmbraInkApp({
       }
 
       setBusy(true);
-      setScrollOffset(0); // return to bottom when submitting
+      setScrollAnchorEnd(null); // return to bottom when submitting
       runStartedAtRef.current = Date.now();
       setRunElapsedSec(0);
       setHistory((current) => [...current, value].slice(-100));
@@ -1768,6 +1803,24 @@ export function UmbraInkApp({
     }
   });
 
+  // Bracketed paste — Ink delivers the whole pasted blob as one string instead of
+  // emitting `\r`/`\n` as Enter keypresses, which previously caused multi-line
+  // pastes to be split and submitted line-by-line. Only active for the main input
+  // (no dialog open, not mid-run); dialogs keep their existing Ctrl+Y paste flow.
+  usePaste(
+    (text) => {
+      const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      setBuffer(
+        (current) =>
+          `${current.slice(0, cursorPosition)}${normalized}${current.slice(cursorPosition)}`,
+      );
+      setCursorPosition((current) => current + normalized.length);
+      setHistoryIndex(null);
+      setSelectedOverlayIndex(0);
+    },
+    { isActive: providerDialog === null && !busy },
+  );
+
   // Live chronometer — ticks every second while run is active
   useEffect(() => {
     if (!busy) return;
@@ -1908,7 +1961,9 @@ export function UmbraInkApp({
           <MemoSessionEntryView key={entry.id} entry={entry} />
         ))}
       </Box>
-      {activeRun ? <LiveRunView run={activeRun} /> : null}
+      {activeRun && !isScrolled ? (
+        <LiveRunView run={activeRun} livePreviewMode={livePreviewMode} />
+      ) : null}
       {isScrolled ? (
         <Box>
           <Text color={umbraTheme.warning} bold>
@@ -1917,6 +1972,7 @@ export function UmbraInkApp({
           <Text
             color={umbraTheme.muted}
           >{`[${scrollVisibleStart + 1}–${scrollVisibleEnd} of ${entries.length}]  PageDown / Esc — scroll down`}</Text>
+          {busy ? <Text color={umbraTheme.muted}>{'  · agent is working...'}</Text> : null}
         </Box>
       ) : null}
       {escConfirmPending ? (
@@ -1963,7 +2019,7 @@ export function UmbraInkApp({
             ? { highlightStart: skillHighlight.start, highlightLen: skillHighlight.len }
             : {})}
         />
-        {busy ? (
+        {busy && !isScrolled ? (
           <Box>
             <Text color={umbraTheme.warning}>{'  '}</Text>
             <BusySpinner />
@@ -1975,6 +2031,10 @@ export function UmbraInkApp({
               </>
             ) : null}
             <Text color={umbraTheme.muted}>{formatElapsed(runElapsedSec * 1000)}</Text>
+            <Text color={umbraTheme.frameDim}>{' · '}</Text>
+            <Text color={umbraTheme.muted} dimColor>
+              {`Ctrl+O: diffs ${livePreviewMode}`}
+            </Text>
           </Box>
         ) : null}
         {badges.length > 0 ? (
@@ -7030,23 +7090,36 @@ function ToolCallCodePreview({ preview }: { preview: { code: string; lang: strin
   const hl = highlightCode(preview.code, preview.lang);
   const visible = hl.lines.slice(0, TOOL_PREVIEW_MAX_LINES);
   const hiddenCount = hl.lines.length - visible.length;
+  const diffAddBg = mixHexColor(umbraTheme.success, umbraTheme.assistantBackground, 0.25);
+  const diffDelBg = mixHexColor(umbraTheme.danger, umbraTheme.assistantBackground, 0.25);
 
   return (
     <Box flexDirection="column" paddingLeft={2}>
-      {visible.map((lineTokens, lineIdx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: stable line order in preview
-        <Text key={`pv:${lineIdx}`}>
-          {lineTokens.map((tok, tokIdx) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable token order within line
-            <Text key={tokIdx} color={tok.color}>
-              {tok.text}
-            </Text>
-          ))}
-        </Text>
-      ))}
-      {hiddenCount > 0 ? (
-        <Text color={umbraTheme.muted} dimColor>{`… +${hiddenCount} more lines`}</Text>
-      ) : null}
+      <Box flexDirection="column" paddingX={1} backgroundColor={umbraTheme.assistantBackground}>
+        {visible.map((lineTokens, lineIdx) => {
+          const lineBg = lineTokens.some((tok) => tok.type === 'diff-add')
+            ? diffAddBg
+            : lineTokens.some((tok) => tok.type === 'diff-del')
+              ? diffDelBg
+              : undefined;
+          return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: stable line order in preview
+            <Box key={`pv:${lineIdx}`} width="100%" backgroundColor={lineBg}>
+              <Text>
+                {lineTokens.map((tok, tokIdx) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable token order within line
+                  <Text key={tokIdx} color={tok.color}>
+                    {tok.text}
+                  </Text>
+                ))}
+              </Text>
+            </Box>
+          );
+        })}
+        {hiddenCount > 0 ? (
+          <Text color={umbraTheme.muted} dimColor>{`… +${hiddenCount} more lines`}</Text>
+        ) : null}
+      </Box>
     </Box>
   );
 }
@@ -8152,23 +8225,26 @@ function writeRunDebugMetadata(run: RunTaskPayload): void {
   });
 }
 
-function LiveRunView({ run }: { run: RunTaskPayload }) {
+function LiveRunView({
+  run,
+  livePreviewMode,
+}: {
+  run: RunTaskPayload;
+  livePreviewMode: LivePreviewMode;
+}) {
   const allEntries = buildRunTimelineEntries(run);
-  // Cap live events to keep the Ink render area small and prevent cursor-jump teleports.
-  const LIVE_VISIBLE = 3;
-  const visible = allEntries.slice(-LIVE_VISIBLE);
-  const hiddenCount = allEntries.length - visible.length;
 
   return (
     <Box flexDirection="column">
-      {hiddenCount > 0 ? (
-        <Box paddingLeft={2}>
-          <Text color={umbraTheme.muted} dimColor>{`··· ${hiddenCount} events`}</Text>
-        </Box>
-      ) : null}
-      {visible.map((entry) => (
-        <SessionEntryView key={`live:${entry.id}`} entry={entry} />
-      ))}
+      {allEntries.map((entry) => {
+        // In compact mode, hide tool-call diff/code previews while the run is still
+        // streaming — they reappear once the entry is committed to the static history.
+        if (entry.kind === 'tool-call' && entry.preview && livePreviewMode === 'compact') {
+          const { preview: _preview, ...rest } = entry;
+          return <SessionEntryView key={`live:${entry.id}`} entry={rest} />;
+        }
+        return <SessionEntryView key={`live:${entry.id}`} entry={entry} />;
+      })}
     </Box>
   );
 }
@@ -8266,6 +8342,7 @@ export function buildSessionTranscriptEntries(events: SessionLogEvent[]): Sessio
       const toolName = String(payload.toolName ?? 'unknown');
       const action = describeToolAction(toolName, payload.arguments);
       const target = describeToolTarget(toolName, payload.arguments);
+      const preview = buildToolCallPreview(toolName, payload.arguments);
       entries.push({
         id: event.id,
         kind: 'tool-call',
@@ -8274,6 +8351,7 @@ export function buildSessionTranscriptEntries(events: SessionLogEvent[]): Sessio
         status: 'running',
         target,
         result: '',
+        ...(preview ? { preview } : {}),
       });
       continue;
     }

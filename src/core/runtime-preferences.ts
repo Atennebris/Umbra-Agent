@@ -7,11 +7,14 @@ export type TerminalCursorStyle = 'blinking' | 'static';
 
 export type UsageDetailMode = 'off' | 'compact' | 'verbose';
 
+export type LivePreviewMode = 'expanded' | 'compact';
+
 type RuntimePreferences = {
   defaultMode: RuntimePermissionMode;
   lastProjectPath?: string;
   cursorStyle?: TerminalCursorStyle;
   usageDetailMode?: UsageDetailMode;
+  livePreviewMode?: LivePreviewMode;
   compactProvider?: string | null;
   compactModel?: string | null;
   reviewProvider?: string | null;
@@ -23,6 +26,7 @@ const DEFAULT_PREFERENCES: RuntimePreferences = {
   defaultMode: 'agent',
   cursorStyle: 'blinking',
   usageDetailMode: 'off',
+  livePreviewMode: 'expanded',
 };
 
 export function readRuntimePreferences(): RuntimePreferences {
@@ -52,6 +56,11 @@ export function readRuntimePreferences(): RuntimePreferences {
       usageDetailMode = 'compact';
     }
 
+    const livePreviewMode: LivePreviewMode =
+      parsed.livePreviewMode === 'compact' || parsed.livePreviewMode === 'expanded'
+        ? parsed.livePreviewMode
+        : 'expanded';
+
     const compactProvider =
       typeof parsed.compactProvider === 'string' ? parsed.compactProvider : null;
     const compactModel = typeof parsed.compactModel === 'string' ? parsed.compactModel : null;
@@ -65,6 +74,7 @@ export function readRuntimePreferences(): RuntimePreferences {
       ...(lastProjectPath ? { lastProjectPath } : {}),
       ...(cursorStyle ? { cursorStyle } : {}),
       usageDetailMode,
+      livePreviewMode,
       compactProvider,
       compactModel,
       reviewProvider,
@@ -113,6 +123,15 @@ export function setUsageDetailMode(mode: UsageDetailMode): void {
 
 export function getUsageDetailMode(): UsageDetailMode {
   return readRuntimePreferences().usageDetailMode ?? 'off';
+}
+
+export function setLivePreviewMode(mode: LivePreviewMode): void {
+  const current = readRuntimePreferences();
+  writePreferences({ ...current, livePreviewMode: mode });
+}
+
+export function getLivePreviewMode(): LivePreviewMode {
+  return readRuntimePreferences().livePreviewMode ?? 'expanded';
 }
 
 export function setThemePreference(name: string): void {

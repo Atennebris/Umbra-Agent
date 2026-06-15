@@ -2,11 +2,103 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-06-15
+
+### Added
+
+- `Ctrl+O` toggles live tool-call diff/code previews between `expanded` (shown immediately as `fs.write`/`fs.edit` happen, while the run is still streaming) and `compact` (hidden until the run finishes). Defaults to `expanded` and persists across sessions. The current mode is shown next to the busy spinner (`Ctrl+O: diffs expanded`)
+- Agent loop turn cap re-added as a generous safety net (`MAX_AGENT_TURNS = 40`): if the model never stops requesting tools, the run now ends with a clear "turn safety limit" message instead of looping forever
+
+### Changed
+
+- **`fs.edit` rewritten from unified-diff patches to exact string replacement** (`oldString` / `newString` / `replaceAll`), matching how Claude Code's and opencode's edit tools work. No more `@@ -a,b +c,d @@` hunk headers or line numbers — the model copies `oldString` verbatim from a recent `fs.read`/`search.rg` result, and the edit fails with a clear, actionable error if `oldString` isn't found or matches multiple locations (unless `replaceAll: true`). This eliminates the repeated "Invalid unified diff hunk header" / "Patch context mismatch" failure loops that were causing oversized reasoning blocks and runaway re-read/retry cycles
+- The agent system prompt's `fs.edit` guidance was rewritten to match: no more "don't compute line numbers" caveats — there are no line numbers at all
+- Live run view no longer hides events behind a `··· N events` counter or a 3-entry sliding window — every tool call, message and status update appears in place, in chronological order, as it happens
+
+### Removed
+
+- `src/tools/unified-diff.ts` — the unified-diff patch parser/applier, no longer used by `fs.edit`
+
+## [0.1.12] - 2026-06-15
+
+### Added
+
+- TUI tool-call code/diff previews and ` ```diff ` markdown blocks now render with a highlighted background: the whole preview gets a filled background (previously it was bare colored text with no block background at all), and added/removed diff lines get a full-width green/red tinted highlight band, derived from the active theme's `success`/`danger` colors (Codex-style)
+- Debug log now writes the full, untruncated reasoning text for any LLM response whose reasoning exceeds 800 chars to `debug/reasoning/<requestId>.txt`, with the file path recorded as `reasoningFile` in the `incoming llm response` event — previously only an 800-char `reasoningPreview` was ever persisted, no matter how long the actual reasoning was
+
+### Changed
+
+- The `fs.edit` diff preview in tool-call cards no longer shows raw `@@ -a,b +c,d @@` hunk headers — they're parsed and dropped, and each diff line now gets a left-side gutter with its real old/new line numbers instead (Codex-style)
+- Strengthened the agent's reasoning-efficiency rules: reasoning must never restate, re-derive, or "draft" code/diffs the user already saw in a tool result (it's never shown to the user, so it was pure wasted tokens), and the model is now told not to call `fs.read` again on a file it has already seen and that hasn't changed since
+- `fs.edit`'s tool description and the reasoning-efficiency rules now explicitly say that `@@ -oldStart,oldCount +newStart,newCount @@` line numbers are only a starting hint for the fuzzy content-based anchor search — the model should not spend reasoning computing or verifying exact line numbers, only the context/removed line content needs to be exact
+
+### Fixed
+
+- Resumed-session transcripts (`/sessions` history view) now render the same syntax-highlighted code/diff preview below `fs.write`/`fs.edit` tool-call cards as a live run does — previously only live runs got the preview, and reopening a past session showed the card with no code at all
+- Cross-run conversation history no longer keeps multiple full copies of the same file's content: when a file is read more than once (or read and then edited) in the same thread, only the most recent `fs.read` result keeps its full content — earlier copies are replaced with a short "stale, see newer result" placeholder, cutting redundant input tokens on long sessions
+
+## [0.1.11] - 2026-06-15
+
+### Fixed
+
+- The agent loop no longer aborts a run with "Agent loop reached the maximum turn limit." after 12 turns. The hard cap (`MAX_AGENT_TURNS = 12`) was an arbitrary limit that killed legitimate multi-step tasks (e.g. a multi-file edit that needs several read/search/edit round-trips) right as the model was about to finish — the run now continues until the model itself stops requesting tools (or the user cancels it)
+- Debug log now records an `agent loop turn started` event for every turn (with the turn number and message count), making it possible to see how many turns a run actually took
+
+## [0.1.10] - 2026-06-15
+
+### Fixed
+
+- `fs.edit` no longer fails patches whose text ends with a trailing newline (the normal case for LLM-generated patches) with a spurious "Patch context mismatch". Previously the trailing `\n` produced a phantom empty hunk line that, after the 0.1.8 lenient-prefix fix, was treated as "this hunk must be followed by a blank line in the file" — a condition almost never true, which made the anchor search fail even when the hunk's real context existed nearby
+- `fs.read`'s `offset`/`limit` are now 0-based line numbers instead of raw byte offsets — previously a model requesting `offset: 25, limit: 25` (expecting lines 25-50) got 25 raw bytes starting at byte 25, which on non-ASCII files (e.g. Cyrillic, emoji) sliced through the middle of a multi-byte UTF-8 character and returned garbled text. The output now also reports `totalLines`
+
+## [0.1.9] - 2026-06-15
+
+### Fixed
+
+- TUI input no longer turns into a garbled mess with the cursor jumping around when pasting long or multi-line text. Bracketed paste mode (via Ink's `usePaste`) is now enabled for the main prompt input, so pasted text is inserted as a single buffer update instead of being streamed character-by-character — previously every `\n`/`\r` inside the pasted text was interpreted as an Enter keypress and submitted the buffer as a separate prompt mid-paste
+- Scrolling the TUI history (PageUp/PageDown) during an active agent run no longer teleports the view back to the bottom or jitters constantly. The scroll position is now a stable absolute anchor that doesn't shift when new entries are appended mid-run, and the ticking live UI (spinner, elapsed timer, live tool-call preview) is hidden while scrolled so it stops forcing full-screen redraws — previously tool-call cards and code blocks near the top could intermittently vanish during a scroll
+
+## [0.1.8] - 2026-06-14
+
+### Added
+
+- Debug log now records detailed `fs.edit` patch processing: the full raw patch text, the parsed hunks (with any lines missing a valid `' '/'+'/'-'` prefix flagged), and the anchor position resolved for each hunk (declared vs. actual, including fuzzy-match offset) — previously the patch text was truncated to 800 chars and none of this internal state was visible
+
+### Fixed
+
+- `fs.edit` no longer fails the entire patch with "Unsupported unified diff line" when a hunk line is missing its leading `' '/'+'/'-' ` prefix (e.g. a forgotten space before a trailing context line like `</html>` on a large hunk) — such lines are now treated as context with their full text, matching how lenient patch tools behave. Previously-working patches are unaffected; only previously-failing ones now succeed
+
+## [0.1.7] - 2026-06-14
+
+### Fixed
+
+- `search.rg`'s fallback engine (used when the `rg` binary isn't available) now matches `pattern` as a regex, mirroring ripgrep's own behavior — previously it did a literal substring match, so any regex-special-character pattern (e.g. `this\.score\[this\.winner\]\+\+`) silently returned zero matches and pushed the agent into broken `shell.exec` workarounds
+- `fs.edit` now searches the entire file for a hunk's context when the `@@` line number is wrong, instead of giving up after ±50 lines — LLM-generated patches can be off by hundreds of lines even when the context itself is copied correctly
+- New runs in an existing session/thread now reconstruct prior tool calls and their results (not just text messages) into the conversation sent to the model — previously every new prompt started with zero memory of files already read or commands already run, causing the agent to re-read the same files on every turn. The reconstructed history is capped at ~24k tokens, trimmed oldest-first
+
 ## [0.1.6] - 2026-06-14
 
 ### Added
 
 - TUI tool-call cards for `fs.write`/`fs.edit` now show a syntax-highlighted code preview (new file content) or unified diff (patch) right below the summary, with a 40-line cap
+- Debug log (`~/.umbra/debug/`) now records every tool call's result — status, error, issues, arguments and output (truncated/collapsed to one line) — previously only the permission decision was logged, making tool failures (e.g. `fs.edit` patch mismatches) invisible in the debug log
+- Debug log now records reasoning content size and a preview for every LLM response, plus a per-message `reasoningContentLengths` array on each outgoing request, to track exactly how much "thinking" is produced and confirm old reasoning is dropped between turns
+
+### Changed
+
+- Syntax highlighting engine migrated to Shiki (TextMate grammars, same engine as VS Code) — replaces the previous regex tokenizer
+- The entire Shiki language bundle (~190 grammars: HTML, Markdown, PHP, XML, Vue, Svelte, Dockerfile, PowerShell, TOML, INI, GraphQL, Dart, Swift, Lua, Makefile, Perl, R, Terraform, Protobuf, Elixir, Haskell, Clojure, Nix, CMake, Zig, Solidity, GDScript, WASM, and many more) is preloaded at startup, replacing the previous 13-language regex tokenizer
+- JSX and TSX now use their own dedicated grammars instead of being highlighted as plain JavaScript/TypeScript
+
+### Fixed
+
+- System prompt now tells the agent the tool-call card already shows a syntax-highlighted preview/diff for `fs.write`/`fs.edit` — stops models from re-pasting entire file contents as markdown code blocks in chat replies
+- `fs.edit` now tolerates patches with slightly wrong `@@` line numbers — if the declared hunk position doesn't match, it searches up to 50 lines around it for the hunk's context before failing
+- The agent run no longer ends silently when the model returns a completely empty response right after a failed tool call — the TUI now shows a message that the task may be incomplete
+- Fixed runaway token growth on reasoning models (e.g. `big-pickle`): the model's "thinking" output was being re-sent in full on every subsequent request and accumulating turn after turn, sometimes adding tens of thousands of extra input tokens within a single session. Reasoning content is no longer echoed back to OpenCode Zen chat-style models, and older turns' reasoning is now dropped from history before each new request
+- System prompt now tells the agent not to restate or reproduce file contents it already retrieved via tool results in its reasoning, to keep "thinking" short and focused
+- `fs.edit` tool description now documents the exact unified-diff format with a worked example, and recommends it over `fs.write` for small changes
+- `fs.edit` patch mismatch errors now show the expected line, the actual line found in the file, and surrounding context — so the model can fix and retry the patch instead of giving up
 
 ## [0.1.5] - 2026-06-11
 

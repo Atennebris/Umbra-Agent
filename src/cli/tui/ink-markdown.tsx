@@ -4,7 +4,7 @@ import type { Tokens } from 'marked';
 import React from 'react';
 import terminalLink from 'terminal-link';
 import { highlightCode } from '../../utils/syntax-highlight.js';
-import { umbraTheme } from './theme.js';
+import { mixHexColor, umbraTheme } from './theme.js';
 
 type InkMarkdownProps = {
   markdown: string;
@@ -127,6 +127,8 @@ function renderToken(token: Tokens.Generic, keyPath: string, index = 0) {
       return null;
     case 'code': {
       const hlResult = highlightCode(token.text, token.lang ?? '');
+      const diffAddBg = mixHexColor(umbraTheme.success, umbraTheme.assistantBackground, 0.25);
+      const diffDelBg = mixHexColor(umbraTheme.danger, umbraTheme.assistantBackground, 0.25);
       return (
         <Box
           flexDirection="column"
@@ -147,17 +149,26 @@ function renderToken(token: Tokens.Generic, keyPath: string, index = 0) {
             <Text color={umbraTheme.code}>{token.text}</Text>
           ) : (
             <Box flexDirection="column">
-              {hlResult.lines.map((lineTokens, lineIdx) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable line order in code block
-                <Text key={`${keyPath}:hl:${lineIdx}`}>
-                  {lineTokens.map((tok, tokIdx) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable token order within line
-                    <Text key={tokIdx} color={tok.color}>
-                      {tok.text}
+              {hlResult.lines.map((lineTokens, lineIdx) => {
+                const lineBg = lineTokens.some((tok) => tok.type === 'diff-add')
+                  ? diffAddBg
+                  : lineTokens.some((tok) => tok.type === 'diff-del')
+                    ? diffDelBg
+                    : undefined;
+                return (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable line order in code block
+                  <Box key={`${keyPath}:hl:${lineIdx}`} width="100%" backgroundColor={lineBg}>
+                    <Text>
+                      {lineTokens.map((tok, tokIdx) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: stable token order within line
+                        <Text key={tokIdx} color={tok.color}>
+                          {tok.text}
+                        </Text>
+                      ))}
                     </Text>
-                  ))}
-                </Text>
-              ))}
+                  </Box>
+                );
+              })}
             </Box>
           )}
         </Box>

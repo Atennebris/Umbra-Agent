@@ -64,6 +64,16 @@ import type {
 import { executeWebFetch, webFetchInputSchema, webFetchOutputSchema } from './web-fetch.js';
 import { executeWebSearch, webSearchInputSchema, webSearchOutputSchema } from './web-search.js';
 
+const FS_EDIT_DESCRIPTION = [
+  'Replace an exact piece of text in an existing file. Prefer this over fs.write for small, targeted changes — it is cheaper and safer than rewriting a whole file.',
+  '',
+  '- `oldString` must match the file\'s current content EXACTLY, including indentation and whitespace — copy it verbatim from a recent fs.read/search.rg result, do not retype from memory.',
+  '- Include enough surrounding lines in `oldString` to uniquely identify one location in the file. No line numbers needed — the match is by content.',
+  '- If `oldString` matches more than once, the call fails with the match count — either add more context to make it unique, or pass `replaceAll: true` to replace every occurrence (e.g. renaming a variable).',
+  '- `newString` is the replacement text (use an empty string to delete `oldString`).',
+  '- For multiple separate edits to the same file, call fs.edit once per edit.',
+].join('\n');
+
 const toolPresets: Record<ToolPresetId, ToolPreset> = {
   'chat-readonly': {
     id: 'chat-readonly',
@@ -120,7 +130,8 @@ const toolRegistry: ToolDefinition[] = [
   }),
   defineTool({
     name: 'fs.read',
-    description: 'Read a text file as UTF-8 with optional offset/limit slicing.',
+    description:
+      'Read a text file as UTF-8. offset/limit are 0-based line numbers — reads up to `limit` lines starting at line `offset` (default: whole file).',
     riskClass: 'read_only',
     readOnly: true,
     concurrencySafe: true,
@@ -128,8 +139,13 @@ const toolRegistry: ToolDefinition[] = [
       type: 'object',
       properties: {
         path: { type: 'string' },
-        offset: { type: 'integer', minimum: 0 },
-        limit: { type: 'integer', minimum: 1, maximum: 512000 },
+        offset: { type: 'integer', minimum: 0, description: '0-based starting line number' },
+        limit: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 512000,
+          description: 'Number of lines to read',
+        },
       },
       required: ['path'],
       additionalProperties: false,
@@ -142,8 +158,9 @@ const toolRegistry: ToolDefinition[] = [
         content: { type: 'string' },
         truncated: { type: 'boolean' },
         totalBytes: { type: 'integer' },
+        totalLines: { type: 'integer' },
       },
-      required: ['path', 'resolvedPath', 'content', 'truncated', 'totalBytes'],
+      required: ['path', 'resolvedPath', 'content', 'truncated', 'totalBytes', 'totalLines'],
       additionalProperties: false,
     },
     inputSchema: fsReadInputSchema,
@@ -212,26 +229,29 @@ const toolRegistry: ToolDefinition[] = [
   }),
   defineTool({
     name: 'fs.edit',
-    description: 'Apply Unified Diff patches to one or more files.',
+    description: FS_EDIT_DESCRIPTION,
     riskClass: 'write',
     readOnly: false,
     concurrencySafe: false,
     inputJsonSchema: {
       type: 'object',
       properties: {
-        patch: { type: 'string' },
-        dryRun: { type: 'boolean' },
+        path: { type: 'string' },
+        oldString: { type: 'string' },
+        newString: { type: 'string' },
+        replaceAll: { type: 'boolean' },
       },
-      required: ['patch'],
+      required: ['path', 'oldString', 'newString'],
       additionalProperties: false,
     },
     outputJsonSchema: {
       type: 'object',
       properties: {
-        dryRun: { type: 'boolean' },
-        changedFiles: { type: 'array' },
+        path: { type: 'string' },
+        resolvedPath: { type: 'string' },
+        replacements: { type: 'integer' },
       },
-      required: ['dryRun', 'changedFiles'],
+      required: ['path', 'resolvedPath', 'replacements'],
       additionalProperties: false,
     },
     inputSchema: fsEditInputSchema,

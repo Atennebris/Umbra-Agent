@@ -1,4 +1,4 @@
-import { writeDebugEvent } from '../debug/runtime-debug.js';
+import { truncateForDebug, writeDebugEvent, writeReasoningDump } from '../debug/runtime-debug.js';
 import { getUsageLogger } from '../memory/usage-log.js';
 import { type CompressionLevel, compressToolOutput, condenseProse } from '../utils/compression.js';
 import type { ProviderCatalog } from './index.js';
@@ -288,6 +288,12 @@ export class DefaultProviderGateway implements ProviderGateway {
     const assistantMsgsWithoutReasoning = request.messages.filter(
       (m) => m.role === 'assistant' && !m.reasoningContent,
     ).length;
+    // One entry per assistant message, in order, so we can see exactly which
+    // turn(s) carry reasoning_content and how large each one is — used to
+    // verify old reasoning is actually being dropped between requests.
+    const reasoningContentLengths = request.messages
+      .filter((m) => m.role === 'assistant')
+      .map((m) => m.reasoningContent?.length ?? 0);
 
     const thinkBudget = (request as ProviderCompleteRequest & { thinkBudget?: unknown })
       .thinkBudget;
@@ -306,6 +312,7 @@ export class DefaultProviderGateway implements ProviderGateway {
         streaming,
         assistantMsgsWithReasoning,
         assistantMsgsWithoutReasoning,
+        reasoningContentLengths,
         thinkBudget: thinkBudget ?? null,
       },
     });
@@ -384,6 +391,10 @@ export class DefaultProviderGateway implements ProviderGateway {
       status: 'success',
     });
 
+    const reasoningFile = response.reasoningContent
+      ? writeReasoningDump(requestId, response.reasoningContent)
+      : null;
+
     writeDebugEvent({
       component: 'provider',
       level: 'info',
@@ -394,6 +405,13 @@ export class DefaultProviderGateway implements ProviderGateway {
         model: response.model,
         stopReason: response.stopReason,
         tokens: usage,
+        outputTextLength: response.outputText?.length ?? 0,
+        toolCallNames: response.toolCalls.map((tc) => tc.name),
+        reasoningLength: response.reasoningContent?.length ?? 0,
+        ...(response.reasoningContent
+          ? { reasoningPreview: truncateForDebug(response.reasoningContent) }
+          : {}),
+        ...(reasoningFile ? { reasoningFile } : {}),
       },
     });
   }

@@ -5,7 +5,7 @@ import { getMergedInstructions } from '../context/instruction-loader.js';
 import { PACKET_TOKEN_CAP, maybeCompressSearchResult } from '../context/retrieval-packet.js';
 import { SPLIT_TURN_TAIL_SIZE, applySplitTurn } from '../context/split-turn.js';
 import { estimateJsonTokens } from '../context/token-estimator.js';
-import { writeDebugEvent } from '../debug/runtime-debug.js';
+import { truncateForDebug, writeDebugEvent } from '../debug/runtime-debug.js';
 import type { MemoryManager } from '../memory/index.js';
 import type {
   ProviderCatalog,
@@ -26,8 +26,8 @@ import type { PermissionOutcome, PermissionRequest } from './permissions.js';
 import { AGENT_IDENTITY } from './prompts.js';
 
 const execAsync = promisify(execCallback);
-const MAX_AGENT_TURNS = 12;
 const MAX_EXEC_HARNESS_ATTEMPTS = 6;
+const MAX_AGENT_TURNS = 40;
 
 export type AgentRuntimeDependencies = {
   memory: MemoryManager;
@@ -406,8 +406,17 @@ export class AgentRuntime {
     prompt: string;
     thinkBudget?: number | 'low' | 'medium' | 'high' | 'max' | null;
   }): Promise<NonNullable<RunTaskPayload['result']>> {
+    let hadFailedToolCall = false;
+
     for (let turn = 0; turn < MAX_AGENT_TURNS; turn += 1) {
       input.hooks.ensureActive();
+
+      writeDebugEvent({
+        component: 'runner',
+        level: 'info',
+        message: 'agent loop turn started',
+        data: { turn, messageCount: input.messages.length },
+      });
 
       // Split-turn: when an active tool exchange overflows, compress the prefix,
       // keep the last SPLIT_TURN_TAIL_SIZE pairs as raw context.
@@ -500,7 +509,33 @@ export class AgentRuntime {
       });
 
       if (response.toolCalls.length === 0) {
+        if (!response.outputText && hadFailedToolCall) {
+          const fallbackText =
+            '[Run ended with no further response from the model after a tool error — the task may be incomplete. Try again or rephrase your request.]';
+          input.hooks.appendEvent({
+            type: 'assistant_message',
+            payload: { text: fallbackText, stopReason: response.stopReason },
+          });
+          this.#memory.appendEvent({
+            threadId: input.threadId,
+            sessionId: input.sessionId,
+            projectPath: input.projectPath,
+            type: 'assistant_message',
+            payload: { text: fallbackText, stopReason: response.stopReason },
+          });
+          return { ...assistantResult, finalText: fallbackText };
+        }
         return assistantResult;
+      }
+
+      // Drop reasoning content from earlier turns before adding this turn's —
+      // only the most recent turn's reasoning is ever echoed back to the model,
+      // otherwise reasoning blocks (often several thousand tokens each) pile up
+      // in every subsequent request for the rest of the session.
+      for (const message of input.messages) {
+        if (message.role === 'assistant' && message.reasoningContent !== undefined) {
+          message.reasoningContent = undefined;
+        }
       }
 
       input.messages.push({
@@ -540,6 +575,10 @@ export class AgentRuntime {
           },
           input.hooks,
         );
+
+        if (toolResult.status === 'failed') {
+          hadFailedToolCall = true;
+        }
 
         if (toolCall.name === 'fs.cd' && toolResult.status === 'completed') {
           const cdOutput = toolResult.output as { newPath: string };
@@ -602,7 +641,25 @@ export class AgentRuntime {
       }
     }
 
-    throw new Error('Agent loop reached the maximum turn limit.');
+    const limitText = `[Run stopped after reaching the ${MAX_AGENT_TURNS}-turn safety limit. The task may be incomplete — try again or break it into smaller steps.]`;
+    input.hooks.appendEvent({
+      type: 'assistant_message',
+      payload: { text: limitText, stopReason: 'max_turns' },
+    });
+    this.#memory.appendEvent({
+      threadId: input.threadId,
+      sessionId: input.sessionId,
+      projectPath: input.projectPath,
+      type: 'assistant_message',
+      payload: { text: limitText, stopReason: 'max_turns' },
+    });
+    return {
+      finalText: limitText,
+      finalJson: null,
+      memoryCitation: input.memoryCitation,
+      check: null,
+      commit: null,
+    };
   }
 
   async #runExecLoop(input: {
@@ -1022,37 +1079,179 @@ function buildSystemPrompt(input: {
     .join('\n\n');
 }
 
+// Budget for reconstructed cross-run conversation history. slideMessageWindow
+// (PAYLOAD_TOKEN_BUDGET, 80k) bounds the full request but only runs inside the
+// agent-loop turn loop — this keeps history bounded for plan/exec modes too,
+// and leaves headroom for the system prompt and the new turn's own exchanges.
+const CONVERSATION_HISTORY_TOKEN_BUDGET = 24_000;
+
+// Strips a leading "./" and "a/"/"b/" diff-prefix so fs.read/fs.write path
+// arguments and fs.edit patch headers can be compared for the same file.
+function normalizeHistoryPath(rawPath: string): string {
+  return rawPath.replace(/^\.\//, '').replace(/^[ab]\//, '');
+}
+
+// Extracts the file path(s) a fs.edit patch touches from its `--- a/...` /
+// `+++ b/...` hunk headers, so reads of those files can be marked stale.
+function extractFsEditTargetPaths(patchText: string): string[] {
+  const paths = new Set<string>();
+  const lines = patchText.replace(/\r\n/g, '\n').split('\n');
+  for (let index = 0; index < lines.length - 1; index++) {
+    const oldLine = lines[index];
+    const newLine = lines[index + 1];
+    if (!oldLine?.startsWith('--- ') || !newLine?.startsWith('+++ ')) continue;
+    for (const headerLine of [oldLine, newLine]) {
+      const raw = headerLine.slice(4).trim().split('\t', 1)[0] ?? '';
+      if (!raw || raw === '/dev/null') continue;
+      paths.add(normalizeHistoryPath(raw));
+    }
+  }
+  return [...paths];
+}
+
+// Reconstructs prior tool calls and their results alongside the text exchanges
+// so a new run in this thread sees what files were already read and what the
+// tools returned. Without this, only `user_message`/`assistant_message` text
+// events survived across runs — every new prompt started with zero memory of
+// earlier tool work, so the model re-read the same files from scratch on every
+// turn.
 function buildConversationHistoryMessages(
   events: Array<{
     type: string;
     payload: Record<string, unknown>;
   }>,
-  maxMessages = 12,
 ): ProviderChatMessage[] {
   const lastCompactionIndex = [...events]
     .map((event) => event.type)
     .lastIndexOf('session_compacted');
-  const startIndex = lastCompactionIndex >= 0 ? lastCompactionIndex + 1 : 0;
+  const relevantEvents = events.slice(lastCompactionIndex >= 0 ? lastCompactionIndex + 1 : 0);
 
-  const messages: Array<ProviderChatMessage | null> = events
-    .slice(startIndex)
-    .filter((event) => event.type === 'user_message' || event.type === 'assistant_message')
-    .map((event) => {
+  // Only reconstruct tool calls that have a matching result later in the log.
+  // An orphaned tool_call_started (e.g. from a run stopped mid-tool-call) would
+  // otherwise produce an assistant message with toolCalls and no matching tool
+  // response, which providers reject.
+  const resolvedToolCallIds = new Set<string>();
+  for (const event of relevantEvents) {
+    if (event.type === 'tool_call_finished' || event.type === 'tool_call_failed') {
+      const toolCallId = event.payload.toolCallId;
+      if (typeof toolCallId === 'string') {
+        resolvedToolCallIds.add(toolCallId);
+      }
+    }
+  }
+
+  // Each unit is either a single text message, or an assistant tool-call
+  // message paired with its tool result — units are dropped as a whole when
+  // trimming to budget so the remaining sequence never references a tool call
+  // without its result.
+  const units: ProviderChatMessage[][] = [];
+
+  // Tracks, per file path, every unit index that "touches" it (fs.read,
+  // fs.write, or fs.edit) and the subset that are fs.read units — used below
+  // to drop stale full-file fs.read results once a fresher read or edit of
+  // the same file exists later in the history.
+  const fsReadUnitIndicesByPath = new Map<string, number[]>();
+  const touchUnitIndicesByPath = new Map<string, number[]>();
+  const recordTouch = (rawPath: string, unitIndex: number, isRead: boolean) => {
+    const key = normalizeHistoryPath(rawPath);
+    const touches = touchUnitIndicesByPath.get(key) ?? [];
+    touches.push(unitIndex);
+    touchUnitIndicesByPath.set(key, touches);
+    if (isRead) {
+      const reads = fsReadUnitIndicesByPath.get(key) ?? [];
+      reads.push(unitIndex);
+      fsReadUnitIndicesByPath.set(key, reads);
+    }
+  };
+
+  for (const event of relevantEvents) {
+    if (event.type === 'user_message' || event.type === 'assistant_message') {
       const text = typeof event.payload.text === 'string' ? event.payload.text.trim() : '';
+      if (!text) continue;
+      units.push([{ role: event.type === 'assistant_message' ? 'assistant' : 'user', content: text }]);
+      continue;
+    }
 
-      if (!text) {
-        return null;
+    if (event.type === 'tool_call_started') {
+      const toolCallId = event.payload.toolCallId;
+      const toolName = event.payload.toolName;
+      if (typeof toolCallId !== 'string' || typeof toolName !== 'string') continue;
+      if (!resolvedToolCallIds.has(toolCallId)) continue;
+
+      const args = event.payload.arguments;
+      units.push([
+        {
+          role: 'assistant',
+          content: null,
+          toolCalls: [
+            {
+              id: toolCallId,
+              name: toolName,
+              arguments: args && typeof args === 'object' ? (args as Record<string, unknown>) : {},
+            },
+          ],
+        },
+      ]);
+
+      const unitIndex = units.length - 1;
+      const argsRecord = args && typeof args === 'object' ? (args as Record<string, unknown>) : {};
+      if (toolName === 'fs.read' && typeof argsRecord.path === 'string') {
+        recordTouch(argsRecord.path, unitIndex, true);
+      } else if (toolName === 'fs.write' && typeof argsRecord.path === 'string') {
+        recordTouch(argsRecord.path, unitIndex, false);
+      } else if (toolName === 'fs.edit' && typeof argsRecord.patch === 'string') {
+        for (const targetPath of extractFsEditTargetPaths(argsRecord.patch)) {
+          recordTouch(targetPath, unitIndex, false);
+        }
+      }
+      continue;
+    }
+
+    if (event.type === 'tool_call_finished' || event.type === 'tool_call_failed') {
+      const toolCallId = event.payload.toolCallId;
+      if (typeof toolCallId !== 'string') continue;
+
+      const pendingUnit = units[units.length - 1];
+      if (!pendingUnit) continue;
+      const pendingCall = pendingUnit[0];
+      if (pendingCall?.role !== 'assistant' || pendingCall.toolCalls?.[0]?.id !== toolCallId) {
+        continue;
       }
 
-      return {
-        role: event.type === 'assistant_message' ? 'assistant' : 'user',
-        content: text,
-      } satisfies ProviderChatMessage;
-    });
+      pendingUnit.push({
+        role: 'tool',
+        toolCallId,
+        content: JSON.stringify(event.payload.result ?? null),
+      });
+    }
+  }
 
-  return messages
-    .filter((message): message is ProviderChatMessage => message !== null)
-    .slice(-maxMessages);
+  // Drop full-file content from fs.read results that were superseded by a
+  // later read or edit of the same file — only the freshest copy of a file's
+  // content is worth its tokens; older copies would otherwise sit in history
+  // alongside the newer one for the rest of the session.
+  for (const [filePath, readIndices] of fsReadUnitIndicesByPath) {
+    const touches = touchUnitIndicesByPath.get(filePath) ?? [];
+    for (const readIndex of readIndices) {
+      const hasLaterTouch = touches.some((touchIndex) => touchIndex > readIndex);
+      if (!hasLaterTouch) continue;
+      const toolResult = units[readIndex]?.[1];
+      if (toolResult?.role === 'tool') {
+        toolResult.content = JSON.stringify({
+          path: filePath,
+          note: 'stale snapshot — this file was read or edited again later in the conversation; refer to the more recent tool result for its current content',
+        });
+      }
+    }
+  }
+
+  let messages = units.flat();
+  while (units.length > 0 && estimateJsonTokens(messages) > CONVERSATION_HISTORY_TOKEN_BUDGET) {
+    units.shift();
+    messages = units.flat();
+  }
+
+  return messages;
 }
 
 const PAYLOAD_TOKEN_BUDGET = 80_000;
@@ -1103,6 +1302,25 @@ function recordToolResult(
     },
   });
 
+  // Tool execution results never reached the debug log before — only the
+  // permission decision did. This is what makes "fs.edit doesn't work" or
+  // similar reports impossible to diagnose from ~/.umbra/debug alone.
+  writeDebugEvent({
+    component: 'runner',
+    level: result.status === 'completed' ? 'info' : 'warn',
+    message: `tool call ${result.status}`,
+    data: {
+      toolCallId: toolCall.id,
+      toolName: toolCall.name,
+      status: result.status,
+      permissionOutcome: result.permission?.outcome,
+      arguments: summarizeForDebug(toolCall.arguments),
+      ...(result.error ? { error: result.error } : {}),
+      ...(result.issues?.length ? { issues: result.issues } : {}),
+      ...(result.status === 'completed' ? { output: summarizeForDebug(result.output) } : {}),
+    },
+  });
+
   if (toolCall.name === 'fs.edit' && result.status === 'completed') {
     memory.appendEvent({
       threadId: context.threadId,
@@ -1128,6 +1346,45 @@ function recordToolResult(
       issues: result.issues ?? [],
     },
   });
+}
+
+const DEBUG_SUMMARY_MAX_DEPTH = 3;
+const DEBUG_SUMMARY_MAX_ARRAY_ITEMS = 20;
+
+// Shrinks tool arguments/results to something safe to drop into the debug
+// log: long strings (patches, file contents, search dumps) are collapsed to
+// one line and truncated, large arrays are capped, deep objects are cut off.
+function summarizeForDebug(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') {
+    return truncateForDebug(value);
+  }
+
+  if (Array.isArray(value)) {
+    if (depth >= DEBUG_SUMMARY_MAX_DEPTH) {
+      return `[array(${value.length})]`;
+    }
+    const items = value
+      .slice(0, DEBUG_SUMMARY_MAX_ARRAY_ITEMS)
+      .map((item) => summarizeForDebug(item, depth + 1));
+    if (value.length > DEBUG_SUMMARY_MAX_ARRAY_ITEMS) {
+      items.push(`…(+${value.length - DEBUG_SUMMARY_MAX_ARRAY_ITEMS} more items)`);
+    }
+    return items;
+  }
+
+  if (value !== null && typeof value === 'object') {
+    if (depth >= DEBUG_SUMMARY_MAX_DEPTH) {
+      return '[object]';
+    }
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, val]) => [
+        key,
+        summarizeForDebug(val, depth + 1),
+      ]),
+    );
+  }
+
+  return value;
 }
 
 function formatPlanAsText(args: Record<string, unknown>): string {

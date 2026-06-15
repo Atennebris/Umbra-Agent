@@ -3,6 +3,7 @@ import React from 'react';
 import type { WebSearchSettingsUpdatePayload } from '../../core/contracts.js';
 import { getLastProjectPath, saveLastProjectPath } from '../../core/runtime-preferences.js';
 import { resolveTargetProjectPath } from '../../utils/project-root.js';
+import { initHighlighter, isHighlighterReady } from '../../utils/syntax-highlight.js';
 import { checkForUpdate, promptAndUpdate } from '../../utils/update-check.js';
 import type { CliCommandHandler } from '../command-types.js';
 import {
@@ -37,8 +38,9 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
   // Persist the resolved project path so future launches from system dirs can fall back to it.
   saveLastProjectPath(targetProjectPath);
 
-  // Check for updates in the background — don't block startup.
+  // Check for updates and load the syntax highlighter in the background — don't block startup.
   const updatePromise = checkForUpdate(4000);
+  const highlighterPromise = initHighlighter();
 
   const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !prompt;
 
@@ -66,6 +68,13 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
         name: 'workspace',
         runningText: 'initializing…',
         doneText: 'ready',
+      },
+      {
+        id: 'highlighter',
+        name: 'syntax highlighting',
+        runningText: 'loading grammars…',
+        doneText: 'ready',
+        errorText: 'unavailable (plain mode)',
       },
     ]);
     loader.start();
@@ -100,6 +109,11 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
       await updateWebSearchSettings({ mode: startupWebMode });
     }
     loader.complete('workspace');
+
+    loader.begin('highlighter');
+    await highlighterPromise;
+    loader.complete('highlighter', isHighlighterReady());
+
     await new Promise<void>((r) => setTimeout(r, 350));
     loader.dismiss();
     loader = null;
@@ -111,6 +125,7 @@ export const runTuiCommand: CliCommandHandler = async (input) => {
     if (startupWebMode !== undefined) {
       await updateWebSearchSettings({ mode: startupWebMode });
     }
+    await highlighterPromise;
   }
 
   if (prompt) {
