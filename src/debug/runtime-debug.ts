@@ -5,6 +5,33 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { resolveRuntimeLayout } from '../memory/runtime-layout.js';
 import { loadConfig } from '../utils/config.js';
 
+// ANSI color codes for terminal-only output (never written to log files)
+const C = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  white: '\x1b[37m',
+};
+
+const COMPONENT_COLOR: Record<string, string> = {
+  runner: C.cyan,
+  provider: C.blue,
+  permissions: C.yellow,
+  daemon: C.magenta,
+  cli: C.white,
+  tui: C.white,
+  debug: C.dim,
+  mcp: C.magenta,
+  skills: C.green,
+  plugins: C.green,
+};
+
 export type DebugEvent = {
   timestamp: string;
   component:
@@ -58,7 +85,7 @@ export function spawnDebugConsole(): void {
 }
 
 export async function runDebugMonitor(options: { intervalMs?: number } = {}): Promise<void> {
-  const intervalMs = options.intervalMs ?? 10000;
+  const intervalMs = options.intervalMs ?? 1000;
   const layout = resolveRuntimeLayout();
   fs.writeFileSync(layout.debugLogPath, '', { flag: 'a', encoding: 'utf8' });
   const YELLOW = '\x1b[33m';
@@ -114,7 +141,7 @@ function printNewEvents(eventsPath: string, position: number): number {
       }
 
       try {
-        console.log(formatDebugEvent(JSON.parse(line) as DebugEvent));
+        console.log(formatDebugEventForTerminal(JSON.parse(line) as DebugEvent));
       } catch {
         console.log(line);
       }
@@ -141,7 +168,7 @@ function printRecentEvents(eventsPath: string, lineCount: number): number {
 
   for (const line of recent) {
     try {
-      console.log(formatDebugEvent(JSON.parse(line) as DebugEvent));
+      console.log(formatDebugEventForTerminal(JSON.parse(line) as DebugEvent));
     } catch {
       console.log(line);
     }
@@ -231,6 +258,63 @@ function renderDebugValue(value: unknown, spacedArray = false): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+// Terminal-only colored formatter — never write ANSI codes to log files.
+function formatDebugEventForTerminal(event: DebugEvent): string {
+  const ts = event.timestamp.replace('T', ' ').replace('Z', '').slice(0, 23);
+  const level = event.level.toUpperCase().padEnd(5);
+  const color = event.level === 'error' ? C.red : event.level === 'warn' ? C.yellow : (COMPONENT_COLOR[event.component] ?? C.white);
+  const component = event.component.padEnd(11);
+  const header = `${C.dim}[${ts}]${C.reset} ${color}${level}${C.reset} ${color}${C.bold}${component}${C.reset}`;
+
+  if (!event.data || Object.keys(event.data).length === 0) {
+    return `${header} ${event.message}`;
+  }
+
+  if (event.level === 'warn' || event.level === 'error') {
+    const lines = [`${header} ${color}${event.message}${C.reset}`];
+    for (const [key, val] of Object.entries(event.data)) {
+      if (val === undefined || val === null) continue;
+      lines.push(`  ${C.dim}${key}:${C.reset} ${renderDebugValue(val, true)}`);
+    }
+    return lines.join('\n');
+  }
+
+  const inlineData = Object.entries(event.data)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${C.dim}${k}=${C.reset}${renderDebugValue(v)}`)
+    .join(' ');
+
+  return `${header} ${event.message} ${inlineData}`;
+}
+
+// Writes the complete tool call payload (arguments + result) to a JSON file
+// in debug/tool-calls/ when the data is too large for the inline log.
+// Returns the file path, or null on failure.
+export function writeToolCallDump(
+  callId: string,
+  toolName: string,
+  args: unknown,
+  result: unknown,
+): string | null {
+  try {
+    const layout = resolveRuntimeLayout();
+    const dir = path.join(layout.debugDir, 'tool-calls');
+    fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, `${callId}.json`);
+    const payload = {
+      callId,
+      toolName,
+      timestamp: new Date().toISOString(),
+      arguments: args,
+      result,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+    return filePath;
+  } catch {
+    return null;
+  }
 }
 
 // Collapses newlines and caps length so multi-line blobs (reasoning content,

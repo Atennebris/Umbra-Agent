@@ -5,7 +5,7 @@ import { getMergedInstructions } from '../context/instruction-loader.js';
 import { PACKET_TOKEN_CAP, maybeCompressSearchResult } from '../context/retrieval-packet.js';
 import { SPLIT_TURN_TAIL_SIZE, applySplitTurn } from '../context/split-turn.js';
 import { estimateJsonTokens } from '../context/token-estimator.js';
-import { truncateForDebug, writeDebugEvent } from '../debug/runtime-debug.js';
+import { truncateForDebug, writeDebugEvent, writeToolCallDump } from '../debug/runtime-debug.js';
 import type { MemoryManager } from '../memory/index.js';
 import type {
   ProviderCatalog,
@@ -564,6 +564,16 @@ export class AgentRuntime {
             toolCallId: toolCall.id,
             toolName: toolCall.name,
             arguments: toolCall.arguments,
+          },
+        });
+        writeDebugEvent({
+          component: 'runner',
+          level: 'info',
+          message: 'tool call started',
+          data: {
+            toolCallId: toolCall.id,
+            toolName: toolCall.name,
+            arguments: summarizeForDebug(toolCall.arguments),
           },
         });
         const toolResult = await this.#executeTool(
@@ -1320,6 +1330,22 @@ function recordToolResult(
       ...(result.status === 'completed' ? { output: summarizeForDebug(result.output) } : {}),
     },
   });
+
+  // Dump full payload to debug/tool-calls/<callId>.json when data is large
+  // so the complete arguments and output are always accessible for inspection.
+  const rawArgs = JSON.stringify(toolCall.arguments ?? {});
+  const rawOutput = result.status === 'completed' ? JSON.stringify(result.output ?? {}) : '';
+  if (rawArgs.length > 1200 || rawOutput.length > 1200) {
+    const dumpPath = writeToolCallDump(toolCall.id, toolCall.name, toolCall.arguments, result);
+    if (dumpPath) {
+      writeDebugEvent({
+        component: 'runner',
+        level: 'info',
+        message: 'tool call full payload saved',
+        data: { toolCallId: toolCall.id, dumpFile: dumpPath },
+      });
+    }
+  }
 
   if (toolCall.name === 'fs.edit' && result.status === 'completed') {
     memory.appendEvent({

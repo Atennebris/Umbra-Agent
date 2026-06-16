@@ -8742,8 +8742,23 @@ function buildToolCallPreview(
     return { code: args.content, lang: path.extname(args.path).slice(1) };
   }
 
-  if (toolName === 'fs.edit' && typeof args.patch === 'string') {
-    return { code: args.patch, lang: 'diff' };
+  if (
+    toolName === 'fs.edit' &&
+    typeof args.oldString === 'string' &&
+    typeof args.newString === 'string'
+  ) {
+    const MAX_DIFF_LINES = 60;
+    const removed = args.oldString
+      .split('\n')
+      .slice(0, MAX_DIFF_LINES)
+      .map((l) => `- ${l}`)
+      .join('\n');
+    const added = args.newString
+      .split('\n')
+      .slice(0, MAX_DIFF_LINES)
+      .map((l) => `+ ${l}`)
+      .join('\n');
+    return { code: `${removed}\n${added}`, lang: 'diff' };
   }
 
   return undefined;
