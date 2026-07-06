@@ -1,6 +1,13 @@
 import type { ProviderChatMessage } from '../providers/index.js';
 import { estimateJsonTokens } from './token-estimator.js';
 
+// Strip reasoningContent before estimation — it's removed before the API call.
+function strippedForEstimate(
+  msgs: ProviderChatMessage[],
+): Omit<ProviderChatMessage, 'reasoningContent'>[] {
+  return msgs.map(({ reasoningContent: _rc, ...rest }) => rest);
+}
+
 export type SplitTurnResult = {
   messages: ProviderChatMessage[];
   splitApplied: boolean;
@@ -77,7 +84,7 @@ export function applySplitTurn(
   maxTokens: number,
   tailSize = SPLIT_TURN_TAIL_SIZE,
 ): SplitTurnResult {
-  if (estimateJsonTokens(messages) <= maxTokens) {
+  if (estimateJsonTokens(strippedForEstimate(messages)) <= maxTokens) {
     return { messages, splitApplied: false, compressedPairs: 0 };
   }
 
@@ -135,7 +142,7 @@ export function applySplitTurn(
 
   // If still over budget, drop old conversation history from front
   const dropFrom = systemMsg ? 1 : 0;
-  while (result.length > coreSize && estimateJsonTokens(result) > maxTokens) {
+  while (result.length > coreSize && estimateJsonTokens(strippedForEstimate(result)) > maxTokens) {
     result.splice(dropFrom, 1);
   }
 

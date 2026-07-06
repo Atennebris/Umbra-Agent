@@ -51,11 +51,30 @@ export type RunLifecycleHooks = {
   ): Promise<PermissionOutcome>;
 };
 
+// Chars stored in session cache preview for large files (> SESSION_FILE_SMALL_THRESHOLD).
+// Small files are stored in full.
+const SESSION_FILE_CACHE_PREVIEW_CHARS = 3_000;
+// Files smaller than this are cached in full; larger ones get a truncated preview.
+const SESSION_FILE_SMALL_THRESHOLD = 8_000;
+
+type SessionFileReadEntry = {
+  path: string;
+  resolvedPath: string;
+  totalBytes: number;
+  totalLines: number;
+  // Stored content: full for small files, prefix for large ones.
+  cachedContent: string;
+  isTruncated: boolean;
+};
+
 export class AgentRuntime {
   readonly #memory: MemoryManager;
   readonly #providers: ProviderCatalog;
   readonly #gateway: ProviderGateway;
   readonly #settingsLoader: () => import('../memory/settings-store.js').RuntimeSettings;
+  // session-id → (resolvedPath → entry); prevents the same file from being
+  // fully re-read on every new run within the same conversation thread.
+  readonly #sessionFileCache = new Map<string, Map<string, SessionFileReadEntry>>();
 
   constructor(dependencies: AgentRuntimeDependencies) {
     this.#memory = dependencies.memory;
@@ -576,15 +595,93 @@ export class AgentRuntime {
             arguments: summarizeForDebug(toolCall.arguments),
           },
         });
-        const toolResult = await this.#executeTool(
-          toolCall,
-          {
-            preset: input.modeContract.toolPreset ?? 'chat-readonly',
-            cwd: input.projectPath,
-            projectPath: input.projectPath,
-          },
-          input.hooks,
+        // Session file cache: return a compact stub for files already read in
+        // this conversation instead of re-adding full content to every turn.
+        const sessionCached = this.#getSessionCachedRead(
+          input.sessionId,
+          toolCall.name,
+          toolCall.arguments,
         );
+        let toolResult: ToolExecutionResult;
+        if (sessionCached) {
+          const note = sessionCached.isTruncated
+            ? `[session-cached: file read earlier in this session, showing first ${SESSION_FILE_CACHE_PREVIEW_CHARS} chars of ${sessionCached.totalBytes} total. Use search.rg for patterns or fs.read with offset+limit for a specific section.]`
+            : '[session-cached: file read earlier in this session]';
+          toolResult = {
+            status: 'completed',
+            toolName: toolCall.name,
+            permission: { outcome: 'allow', reason: 'session-cache', requiresApproval: false, effectiveRisk: 'read_only' },
+            output: {
+              path: sessionCached.path,
+              resolvedPath: sessionCached.resolvedPath,
+              content: sessionCached.cachedContent,
+              truncated: sessionCached.isTruncated,
+              totalBytes: sessionCached.totalBytes,
+              totalLines: sessionCached.totalLines,
+              cached: true,
+              note,
+            },
+          };
+          writeDebugEvent({
+            component: 'runner',
+            level: 'info',
+            message: 'fs.read served from session cache',
+            data: {
+              path: sessionCached.path,
+              totalBytes: sessionCached.totalBytes,
+              isTruncated: sessionCached.isTruncated,
+              savedBytesEstimate: sessionCached.totalBytes - sessionCached.cachedContent.length,
+            },
+          });
+        } else {
+          toolResult = await this.#executeTool(
+            toolCall,
+            {
+              preset: input.modeContract.toolPreset ?? 'chat-readonly',
+              cwd: input.projectPath,
+              projectPath: input.projectPath,
+            },
+            input.hooks,
+          );
+          // Cache successful full-file reads for the rest of this session.
+          if (toolCall.name === 'fs.read' && toolResult.status === 'completed') {
+            this.#cacheSessionFileRead(input.sessionId, toolResult.output);
+            writeDebugEvent({
+              component: 'runner',
+              level: 'info',
+              message: 'fs.read cached for session',
+              data: {
+                path: (toolResult.output as Record<string, unknown>)?.path,
+                totalBytes: (toolResult.output as Record<string, unknown>)?.totalBytes,
+              },
+            });
+          }
+        }
+
+        // Invalidate cache when the file is overwritten or patched.
+        if (
+          (toolCall.name === 'fs.write' || toolCall.name === 'fs.edit') &&
+          toolResult.status === 'completed'
+        ) {
+          try {
+            const args =
+              typeof toolCall.arguments === 'string'
+                ? (JSON.parse(toolCall.arguments) as Record<string, unknown>)
+                : (toolCall.arguments ?? {});
+            const p = typeof args.path === 'string' ? args.path : null;
+            if (p) {
+              this.#invalidateSessionCacheForPath(input.sessionId, p);
+              writeDebugEvent({
+                component: 'runner',
+                level: 'info',
+                message: 'session file cache invalidated',
+                data: { path: p, trigger: toolCall.name },
+              });
+            }
+          } catch {
+            // ignore
+          }
+        }
 
         if (toolResult.status === 'failed') {
           hadFailedToolCall = true;
@@ -835,6 +932,64 @@ export class AgentRuntime {
       });
     }
     return executeToolCall(baseRequest);
+  }
+
+  // Returns cached output object if a full read of this path was already done
+  // in this session, null otherwise. Only intercepts full reads (no offset).
+  #getSessionCachedRead(
+    sessionId: string,
+    toolName: string,
+    argsRaw: string | Record<string, unknown> | undefined,
+  ): SessionFileReadEntry | null {
+    if (toolName !== 'fs.read') return null;
+    try {
+      const args =
+        typeof argsRaw === 'string'
+          ? (JSON.parse(argsRaw) as Record<string, unknown>)
+          : (argsRaw ?? {});
+      // Skip partial reads — they are targeted lookups, not full-file reads.
+      if (args.offset != null || args.limit != null) return null;
+      const rawPath = typeof args.path === 'string' ? args.path : null;
+      if (!rawPath) return null;
+      const cache = this.#sessionFileCache.get(sessionId);
+      if (!cache) return null;
+      return cache.get(rawPath) ?? cache.get(normalizeHistoryPath(rawPath)) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  #cacheSessionFileRead(sessionId: string, output: unknown): void {
+    try {
+      const r = output as Record<string, unknown>;
+      if (typeof r.path !== 'string' || typeof r.resolvedPath !== 'string') return;
+      const content = typeof r.content === 'string' ? r.content : '';
+      const isSmall = content.length <= SESSION_FILE_SMALL_THRESHOLD;
+      const entry: SessionFileReadEntry = {
+        path: r.path,
+        resolvedPath: r.resolvedPath,
+        totalBytes: typeof r.totalBytes === 'number' ? r.totalBytes : content.length,
+        totalLines: typeof r.totalLines === 'number' ? r.totalLines : 0,
+        cachedContent: isSmall ? content : content.slice(0, SESSION_FILE_CACHE_PREVIEW_CHARS),
+        isTruncated: !isSmall,
+      };
+      let cache = this.#sessionFileCache.get(sessionId);
+      if (!cache) {
+        cache = new Map();
+        this.#sessionFileCache.set(sessionId, cache);
+      }
+      cache.set(entry.path, entry);
+      if (entry.resolvedPath !== entry.path) cache.set(entry.resolvedPath, entry);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
+  #invalidateSessionCacheForPath(sessionId: string, rawPath: string): void {
+    const cache = this.#sessionFileCache.get(sessionId);
+    if (!cache) return;
+    cache.delete(rawPath);
+    cache.delete(normalizeHistoryPath(rawPath));
   }
 
   async #runCheckCommand(
@@ -1119,6 +1274,33 @@ function extractFsEditTargetPaths(patchText: string): string[] {
   return [...paths];
 }
 
+// How many chars of a large tool result to keep in session history.
+// Full content is sent during the active run; history entries are truncated to
+// save input tokens on every subsequent request (same pattern as OpenCode prune).
+const HISTORY_TOOL_RESULT_MAX_CHARS = 2_500;
+
+// Truncate large file-content tool results when storing them in conversation
+// history. fs.read on a 26 KB HTML file would otherwise bloat every subsequent
+// API call with the same raw bytes — a file that has already been acted on
+// doesn't need to be re-sent in full on every future turn.
+function truncateHistoryToolResult(toolName: string, rawJson: string, result: unknown): string {
+  if (rawJson.length <= HISTORY_TOOL_RESULT_MAX_CHARS) return rawJson;
+  if (toolName !== 'fs.read') return rawJson;
+  try {
+    const r = result as Record<string, unknown>;
+    const preview = typeof r.content === 'string' ? r.content.slice(0, 400) : '';
+    return JSON.stringify({
+      path: r.path,
+      totalBytes: r.totalBytes,
+      totalLines: r.totalLines,
+      note: `[history: full content (${rawJson.length} chars) omitted — use search.rg to find specific patterns, or fs.read with offset+limit for a targeted section. Do NOT re-read the whole file.]`,
+      preview,
+    });
+  } catch {
+    return rawJson.slice(0, HISTORY_TOOL_RESULT_MAX_CHARS);
+  }
+}
+
 // Reconstructs prior tool calls and their results alongside the text exchanges
 // so a new run in this thread sees what files were already read and what the
 // tools returned. Without this, only `user_message`/`assistant_message` text
@@ -1178,7 +1360,9 @@ function buildConversationHistoryMessages(
     if (event.type === 'user_message' || event.type === 'assistant_message') {
       const text = typeof event.payload.text === 'string' ? event.payload.text.trim() : '';
       if (!text) continue;
-      units.push([{ role: event.type === 'assistant_message' ? 'assistant' : 'user', content: text }]);
+      units.push([
+        { role: event.type === 'assistant_message' ? 'assistant' : 'user', content: text },
+      ]);
       continue;
     }
 
@@ -1228,10 +1412,12 @@ function buildConversationHistoryMessages(
         continue;
       }
 
+      const toolName = pendingCall.toolCalls?.[0]?.name ?? '';
+      const rawContent = JSON.stringify(event.payload.result ?? null);
       pendingUnit.push({
         role: 'tool',
         toolCallId,
-        content: JSON.stringify(event.payload.result ?? null),
+        content: truncateHistoryToolResult(toolName, rawContent, event.payload.result),
       });
     }
   }
@@ -1266,11 +1452,19 @@ function buildConversationHistoryMessages(
 
 const PAYLOAD_TOKEN_BUDGET = 80_000;
 
+// Strip reasoningContent before token estimation — it's removed before the API call,
+// so counting it would inflate the budget and cause premature context compression.
+function strippedForEstimate(
+  msgs: ProviderChatMessage[],
+): Omit<ProviderChatMessage, 'reasoningContent'>[] {
+  return msgs.map(({ reasoningContent: _rc, ...rest }) => rest);
+}
+
 export function slideMessageWindow(
   messages: ProviderChatMessage[],
   maxTokens = PAYLOAD_TOKEN_BUDGET,
 ): { messages: ProviderChatMessage[]; dropped: number; hardStop: boolean } {
-  if (estimateJsonTokens(messages) <= maxTokens) {
+  if (estimateJsonTokens(strippedForEstimate(messages)) <= maxTokens) {
     return { messages, dropped: 0, hardStop: false };
   }
   const [systemMsg, ...rest] = messages;
@@ -1280,12 +1474,17 @@ export function slideMessageWindow(
 
   let dropped = 0;
   let current = [...body];
-  while (current.length > 0 && estimateJsonTokens([...head, ...current]) > maxTokens) {
+  while (
+    current.length > 0 &&
+    estimateJsonTokens(strippedForEstimate([...head, ...current])) > maxTokens
+  ) {
     current = current.slice(1);
     dropped++;
   }
 
-  const hardStop = current.length === 0 && estimateJsonTokens([...head, ...current]) > maxTokens;
+  const hardStop =
+    current.length === 0 &&
+    estimateJsonTokens(strippedForEstimate([...head, ...current])) > maxTokens;
   return { messages: [...head, ...current], dropped, hardStop };
 }
 

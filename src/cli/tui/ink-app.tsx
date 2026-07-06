@@ -463,13 +463,13 @@ export function UmbraInkApp({
   const [scrollAnchorEnd, setScrollAnchorEnd] = useState<number | null>(null);
   const [showCitations, setShowCitations] = useState(false);
   const showCitationsRef = useRef(false);
+  const [livePreviewMode, setLivePreviewMode_] = useState<LivePreviewMode>(() =>
+    getLivePreviewMode(),
+  );
   const [usageDetailMode, setUsageDetailMode_] = useState<UsageDetailMode>(() =>
     getUsageDetailMode(),
   );
   const usageDetailModeRef = useRef<UsageDetailMode>(usageDetailMode);
-  const [livePreviewMode, setLivePreviewMode_] = useState<LivePreviewMode>(() =>
-    getLivePreviewMode(),
-  );
   const lastUserEntryIdRef = useRef<string | null>(null);
   const [usageStats, setUsageStats] = useState<{
     totalTokens: number;
@@ -613,17 +613,6 @@ export function UmbraInkApp({
         if (prev === null) return null;
         const next = prev + step;
         return next >= entries.length ? null : next; // reaching the live tail resumes auto-follow
-      });
-      return;
-    }
-
-    // Ctrl+O — toggle live tool-call preview (diff/code) rendering between expanded and compact,
-    // always active (even during a run) so the user can react while output is streaming in.
-    if (key.ctrl && input === 'o' && !providerDialog) {
-      setLivePreviewMode_((prev) => {
-        const next: LivePreviewMode = prev === 'expanded' ? 'compact' : 'expanded';
-        setLivePreviewMode(next);
-        return next;
       });
       return;
     }
@@ -1755,6 +1744,17 @@ export function UmbraInkApp({
       return;
     }
 
+    // Ctrl+O — toggle live tool-call preview (diff/code) between expanded and compact;
+    // always active (even during a run) so the user can react while output streams in.
+    if (key.ctrl && input === 'o' && !providerDialog) {
+      setLivePreviewMode_((prev) => {
+        const next: LivePreviewMode = prev === 'expanded' ? 'compact' : 'expanded';
+        setLivePreviewMode(next);
+        return next;
+      });
+      return;
+    }
+
     // ── Ctrl+← / Ctrl+→ — jump word by word ─────────────────────────────
     if (key.ctrl && key.leftArrow) {
       // move to start of previous word
@@ -2031,10 +2031,6 @@ export function UmbraInkApp({
               </>
             ) : null}
             <Text color={umbraTheme.muted}>{formatElapsed(runElapsedSec * 1000)}</Text>
-            <Text color={umbraTheme.frameDim}>{' · '}</Text>
-            <Text color={umbraTheme.muted} dimColor>
-              {`Ctrl+O: diffs ${livePreviewMode}`}
-            </Text>
           </Box>
         ) : null}
         {badges.length > 0 ? (
@@ -2067,6 +2063,12 @@ export function UmbraInkApp({
       {usageDetailMode !== 'off' ? (
         <InkMetricsPanel mode={usageDetailMode} stats={usageStats} />
       ) : null}
+      <Box flexDirection="row">
+        <Text color={umbraTheme.frameDim}>{' · '}</Text>
+        <Text color={umbraTheme.muted} dimColor>
+          {`Ctrl+O: diffs ${livePreviewMode}`}
+        </Text>
+      </Box>
     </Box>
   );
 
@@ -8228,17 +8230,13 @@ function writeRunDebugMetadata(run: RunTaskPayload): void {
 function LiveRunView({
   run,
   livePreviewMode,
-}: {
-  run: RunTaskPayload;
-  livePreviewMode: LivePreviewMode;
-}) {
+}: { run: RunTaskPayload; livePreviewMode: LivePreviewMode }) {
   const allEntries = buildRunTimelineEntries(run);
 
   return (
     <Box flexDirection="column">
       {allEntries.map((entry) => {
-        // In compact mode, hide tool-call diff/code previews while the run is still
-        // streaming — they reappear once the entry is committed to the static history.
+        // In compact mode, hide tool-call diff/code previews while the run is still streaming
         if (entry.kind === 'tool-call' && entry.preview && livePreviewMode === 'compact') {
           const { preview: _preview, ...rest } = entry;
           return <SessionEntryView key={`live:${entry.id}`} entry={rest} />;
@@ -8739,7 +8737,13 @@ function buildToolCallPreview(
     typeof args.content === 'string' &&
     typeof args.path === 'string'
   ) {
-    return { code: args.content, lang: path.extname(args.path).slice(1) };
+    const MAX_DIFF_LINES = 60;
+    const lines = args.content
+      .split('\n')
+      .slice(0, MAX_DIFF_LINES)
+      .map((l) => `+ ${l}`)
+      .join('\n');
+    return { code: lines, lang: 'diff' };
   }
 
   if (
